@@ -44,43 +44,55 @@ export function Dashboard() {
       title="Dashboard"
       subtitle="Welcome back! Here's your invoice processing overview."
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title="Total Invoices This Month"
-            value={stats?.thisMonthCount ?? 0}
-            icon={<FileText className="w-5 h-5 text-gold-400" />}
-            trend={getTrend() ?? undefined}
-            loading={statsLoading}
-          />
-          <StatsCard
-            title="Total Amount Processed"
-            value={formatCurrency(stats?.totalAmount ?? 0)}
-            icon={<DollarSign className="w-5 h-5 text-success-400" />}
-            subtitle="This month"
-            loading={statsLoading}
-          />
-          <StatsCard
-            title="Pending Approval"
-            value={stats?.pendingCount ?? 0}
-            icon={<Clock className="w-5 h-5 text-warning-400" />}
-            subtitle="Awaiting review"
-            loading={statsLoading}
-          />
-          <StatsCard
-            title="Avg. Processing Time"
-            value={`${stats?.avgProcessingTime ?? 0}s`}
-            icon={<Zap className="w-5 h-5 text-blue-400" />}
-            subtitle="AI extraction speed"
-            loading={statsLoading}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="animate-slide-up stagger-1 opacity-0 [animation-fill-mode:forwards]">
+            <StatsCard
+              title="Total Invoices This Month"
+              value={stats?.thisMonthCount ?? 0}
+              icon={<FileText className="w-5 h-5" strokeWidth={2} />}
+              trend={getTrend() ?? undefined}
+              loading={statsLoading}
+              accentColor="ember"
+            />
+          </div>
+          <div className="animate-slide-up stagger-2 opacity-0 [animation-fill-mode:forwards]">
+            <StatsCard
+              title="Total Amount Processed"
+              value={formatCurrency(stats?.totalAmount ?? 0)}
+              icon={<DollarSign className="w-5 h-5" strokeWidth={2} />}
+              subtitle="This month"
+              loading={statsLoading}
+              accentColor="mint"
+            />
+          </div>
+          <div className="animate-slide-up stagger-3 opacity-0 [animation-fill-mode:forwards]">
+            <StatsCard
+              title="Pending Approval"
+              value={stats?.pendingCount ?? 0}
+              icon={<Clock className="w-5 h-5" strokeWidth={2} />}
+              subtitle="Awaiting review"
+              loading={statsLoading}
+              accentColor="violet"
+            />
+          </div>
+          <div className="animate-slide-up stagger-4 opacity-0 [animation-fill-mode:forwards]">
+            <StatsCard
+              title="Avg. Processing Time"
+              value={`${stats?.avgProcessingTime ?? 0}s`}
+              icon={<Zap className="w-5 h-5" strokeWidth={2} />}
+              subtitle="AI extraction speed"
+              loading={statsLoading}
+              accentColor="azure"
+            />
+          </div>
         </div>
 
         {/* Main content area */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Recent Invoices - 3 columns */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 animate-slide-up stagger-5 opacity-0 [animation-fill-mode:forwards]">
             <RecentInvoices
               invoices={recentInvoices ?? []}
               loading={recentLoading}
@@ -88,7 +100,7 @@ export function Dashboard() {
           </div>
 
           {/* Processing Queue - 2 columns */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 animate-slide-up stagger-6 opacity-0 [animation-fill-mode:forwards]">
             <ProcessingQueue
               invoices={processingQueue ?? []}
               loading={queueLoading}
@@ -97,10 +109,12 @@ export function Dashboard() {
         </div>
 
         {/* Vendor Spend Chart */}
-        <SpendByVendor
-          data={vendorSpend ?? []}
-          loading={vendorLoading}
-        />
+        <div className="animate-fade-in opacity-0 [animation-fill-mode:forwards]" style={{ animationDelay: '0.4s' }}>
+          <SpendByVendor
+            data={vendorSpend ?? []}
+            loading={vendorLoading}
+          />
+        </div>
       </div>
     </PageContainer>
   );

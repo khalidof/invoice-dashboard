@@ -8,6 +8,8 @@ import {
   Loader2,
   X,
   AlertCircle,
+  Sparkles,
+  CloudUpload,
 } from 'lucide-react';
 import { cn, formatFileSize } from '@/utils';
 import { ACCEPTED_FILE_TYPES, MAX_FILE_SIZE } from '@/utils/constants';
@@ -138,66 +140,111 @@ export function InvoiceUploader({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Drop Zone */}
       <div
         {...getRootProps()}
         className={cn(
-          'relative flex flex-col items-center justify-center p-12 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer group',
+          'relative flex flex-col items-center justify-center p-16 rounded-3xl border-2 border-dashed transition-all duration-500 cursor-pointer group overflow-hidden',
           isDragActive && !isDragReject
-            ? 'border-gold-500 bg-gold-500/5 scale-[1.02]'
+            ? 'border-ember-500 bg-ember-500/5 scale-[1.01]'
             : isDragReject
-            ? 'border-error-500 bg-error-500/5'
-            : 'border-navy-700 bg-navy-900/30 hover:border-navy-600 hover:bg-navy-900/50'
+            ? 'border-rose-500 bg-rose-500/5'
+            : 'border-obsidian-700/50 bg-obsidian-900/30 hover:border-obsidian-600/50 hover:bg-obsidian-800/30'
         )}
       >
         <input {...getInputProps()} />
 
-        {/* Decorative corners */}
-        <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-navy-700 rounded-tl-lg group-hover:border-gold-500/50 transition-colors" />
-        <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-navy-700 rounded-tr-lg group-hover:border-gold-500/50 transition-colors" />
-        <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-navy-700 rounded-bl-lg group-hover:border-gold-500/50 transition-colors" />
-        <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-navy-700 rounded-br-lg group-hover:border-gold-500/50 transition-colors" />
+        {/* Animated background gradient */}
+        <div className={cn(
+          "absolute inset-0 bg-gradient-to-br from-ember-500/5 via-transparent to-violet-500/5 opacity-0 transition-opacity duration-500",
+          isDragActive && "opacity-100"
+        )} />
 
-        <div
-          className={cn(
-            'flex items-center justify-center w-16 h-16 rounded-2xl mb-6 transition-all duration-300',
-            isDragActive
-              ? 'bg-gold-500/20 scale-110'
-              : 'bg-navy-800/50 group-hover:bg-navy-800'
-          )}
-        >
-          <Upload
+        {/* Decorative corner elements */}
+        {['top-6 left-6 border-l-2 border-t-2 rounded-tl-xl',
+          'top-6 right-6 border-r-2 border-t-2 rounded-tr-xl',
+          'bottom-6 left-6 border-l-2 border-b-2 rounded-bl-xl',
+          'bottom-6 right-6 border-r-2 border-b-2 rounded-br-xl'
+        ].map((classes, i) => (
+          <div
+            key={i}
             className={cn(
-              'w-8 h-8 transition-colors',
-              isDragActive ? 'text-gold-400' : 'text-navy-400 group-hover:text-navy-300'
+              'absolute w-10 h-10 transition-all duration-300',
+              classes,
+              isDragActive
+                ? 'border-ember-500/60'
+                : 'border-obsidian-700/40 group-hover:border-obsidian-600/60'
             )}
           />
+        ))}
+
+        {/* Upload icon with glow */}
+        <div className="relative mb-8">
+          <div className={cn(
+            "absolute inset-0 rounded-3xl blur-2xl transition-all duration-500",
+            isDragActive ? "bg-ember-500/30" : "bg-ember-500/0 group-hover:bg-ember-500/10"
+          )} />
+          <div
+            className={cn(
+              'relative flex items-center justify-center w-20 h-20 rounded-3xl transition-all duration-500',
+              isDragActive
+                ? 'bg-gradient-to-br from-ember-500/30 to-ember-600/20 scale-110'
+                : 'bg-obsidian-800/60 group-hover:bg-obsidian-800 group-hover:scale-105'
+            )}
+          >
+            <CloudUpload
+              className={cn(
+                'w-9 h-9 transition-all duration-300',
+                isDragActive
+                  ? 'text-ember-400'
+                  : 'text-obsidian-400 group-hover:text-obsidian-300'
+              )}
+              strokeWidth={1.5}
+            />
+          </div>
         </div>
 
-        <h3 className="text-lg font-semibold text-navy-200 mb-2">
-          {isDragActive ? 'Drop to upload' : 'Drag & drop invoices here'}
+        <h3 className="text-xl font-display font-semibold text-obsidian-100 mb-3">
+          {isDragActive ? 'Release to upload' : 'Drop invoices here'}
         </h3>
-        <p className="text-sm text-navy-400 mb-4">or click to browse</p>
+        <p className="text-sm text-obsidian-400 mb-6">
+          Upload PDF or image files for AI-powered data extraction
+        </p>
 
-        <div className="flex items-center gap-4 text-xs text-navy-500">
+        <Button variant="secondary" size="md" className="mb-8">
+          Browse Files
+        </Button>
+
+        <div className="flex items-center gap-6 text-xs text-obsidian-500">
           <span className="flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5" />
             PDF, PNG, JPG
           </span>
-          <span className="w-1 h-1 rounded-full bg-navy-600" />
-          <span>Up to 10MB</span>
-          <span className="w-1 h-1 rounded-full bg-navy-600" />
-          <span>Max {maxFiles} files</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-obsidian-700" />
+          <span>Up to 10MB per file</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-obsidian-700" />
+          <span>Max {maxFiles} files at once</span>
+        </div>
+
+        {/* AI badge */}
+        <div className="absolute bottom-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full bg-obsidian-800/60 border border-obsidian-700/40">
+          <Sparkles className="w-3.5 h-3.5 text-ember-400" />
+          <span className="text-[10px] font-semibold text-obsidian-400 uppercase tracking-wider">
+            AI Powered
+          </span>
         </div>
       </div>
 
       {/* Upload Queue */}
       {uploads.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-navy-300">
-              Uploads ({uploads.length})
+            <h4 className="text-base font-semibold text-obsidian-200">
+              Uploads
+              <span className="ml-2 text-sm font-normal text-obsidian-500">
+                ({uploads.length} file{uploads.length > 1 ? 's' : ''})
+              </span>
             </h4>
             {uploads.some((u) => u.status === 'success') && (
               <Button variant="ghost" size="sm" onClick={clearCompleted}>
@@ -206,7 +253,7 @@ export function InvoiceUploader({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {uploads.map((upload, index) => (
               <UploadItem
                 key={`${upload.file.name}-${index}`}
@@ -233,54 +280,58 @@ function UploadItem({
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-4 rounded-xl border transition-all',
+        'flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300',
         status === 'success'
-          ? 'bg-success-500/5 border-success-500/20'
+          ? 'bg-gradient-to-r from-mint-500/10 to-mint-500/5 border-mint-500/20'
           : status === 'error'
-          ? 'bg-error-500/5 border-error-500/20'
-          : 'bg-navy-900/50 border-navy-800'
+          ? 'bg-gradient-to-r from-rose-500/10 to-rose-500/5 border-rose-500/20'
+          : 'bg-obsidian-800/40 border-obsidian-700/30'
       )}
     >
       {/* Icon */}
       <div
         className={cn(
-          'flex items-center justify-center w-10 h-10 rounded-lg',
+          'flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300',
           status === 'success'
-            ? 'bg-success-500/20'
+            ? 'bg-mint-500/20'
             : status === 'error'
-            ? 'bg-error-500/20'
-            : 'bg-navy-800'
+            ? 'bg-rose-500/20'
+            : status === 'uploading' || status === 'processing'
+            ? 'bg-ember-500/20'
+            : 'bg-obsidian-700/50'
         )}
       >
         {status === 'uploading' || status === 'processing' ? (
-          <Loader2 className="w-5 h-5 text-gold-400 animate-spin" />
+          <Loader2 className="w-5 h-5 text-ember-400 animate-spin" />
         ) : status === 'success' ? (
-          <CheckCircle2 className="w-5 h-5 text-success-400" />
+          <CheckCircle2 className="w-5 h-5 text-mint-400" />
         ) : status === 'error' ? (
-          <XCircle className="w-5 h-5 text-error-400" />
+          <XCircle className="w-5 h-5 text-rose-400" />
         ) : (
-          <FileText className="w-5 h-5 text-navy-400" />
+          <FileText className="w-5 h-5 text-obsidian-400" />
         )}
       </div>
 
       {/* File info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-navy-200 truncate">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-obsidian-100 truncate">
             {file.name}
           </span>
-          <span className="text-xs text-navy-500">{formatFileSize(file.size)}</span>
+          <span className="text-xs text-obsidian-500 font-mono">
+            {formatFileSize(file.size)}
+          </span>
         </div>
 
         {status === 'uploading' && (
-          <div className="mt-2">
-            <div className="flex items-center justify-between text-xs text-navy-400 mb-1">
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-obsidian-400 mb-2">
               <span>Uploading...</span>
-              <span>{progress}%</span>
+              <span className="font-mono">{progress}%</span>
             </div>
-            <div className="h-1 bg-navy-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-obsidian-700/50 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gold-500 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-ember-500 to-ember-400 transition-all duration-300 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -288,24 +339,24 @@ function UploadItem({
         )}
 
         {status === 'processing' && (
-          <div className="flex items-center gap-2 mt-1 text-xs text-gold-400">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            AI extracting data...
+          <div className="flex items-center gap-2 mt-2 text-xs text-ember-400">
+            <Sparkles className="w-3 h-3" />
+            <span>AI extracting invoice data...</span>
           </div>
         )}
 
         {status === 'success' && result?.data && (
-          <div className="flex items-center gap-3 mt-1 text-xs text-success-400">
+          <div className="flex items-center gap-3 mt-2 text-xs text-mint-400">
             <span>Invoice #{result.data.invoice_number}</span>
-            <span className="w-1 h-1 rounded-full bg-success-500" />
+            <span className="w-1 h-1 rounded-full bg-mint-500" />
             <span>{result.data.line_items_count} line items</span>
-            <span className="w-1 h-1 rounded-full bg-success-500" />
-            <span>{result.data.confidence}% confidence</span>
+            <span className="w-1 h-1 rounded-full bg-mint-500" />
+            <span className="font-semibold">{result.data.confidence}% confidence</span>
           </div>
         )}
 
         {status === 'error' && (
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-error-400">
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-rose-400">
             <AlertCircle className="w-3 h-3" />
             {error || 'Upload failed'}
           </div>
@@ -316,7 +367,7 @@ function UploadItem({
       {(status === 'success' || status === 'error' || status === 'idle') && (
         <button
           onClick={onRemove}
-          className="p-1.5 rounded-lg text-navy-500 hover:text-navy-300 hover:bg-navy-800 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-obsidian-500 hover:text-obsidian-200 hover:bg-obsidian-700/50 transition-all duration-200"
         >
           <X className="w-4 h-4" />
         </button>

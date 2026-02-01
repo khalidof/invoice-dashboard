@@ -6,7 +6,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/utils';
 
@@ -26,92 +26,146 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-navy-900/80 backdrop-blur-xl border-r border-navy-800/50 transition-all duration-300 ease-in-out',
-        collapsed ? 'w-[72px]' : 'w-[260px]'
+        'fixed left-0 top-0 z-40 h-screen transition-all duration-500 ease-out',
+        collapsed ? 'w-[80px]' : 'w-[280px]'
       )}
     >
-      {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-navy-800/50">
-        <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 shadow-glow">
-            <Sparkles className="w-5 h-5 text-navy-950" />
-            <div className="absolute inset-0 rounded-xl bg-gold-400/20 animate-pulse-slow" />
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-lg font-display font-semibold text-white tracking-tight">
-                InvoiceAI
-              </span>
-              <span className="text-2xs text-navy-400 font-medium uppercase tracking-wider">
-                Pro Dashboard
-              </span>
+      {/* Frosted glass background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-obsidian-900/95 via-obsidian-900/90 to-obsidian-950/95 backdrop-blur-2xl" />
+
+      {/* Right border with gradient */}
+      <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-obsidian-700/50 to-transparent" />
+
+      {/* Ambient glow */}
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-40 h-40 bg-ember-500/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Logo */}
+        <div className={cn(
+          "flex items-center h-20 border-b border-obsidian-800/30 transition-all duration-500",
+          collapsed ? 'px-5 justify-center' : 'px-6'
+        )}>
+          <div className="flex items-center gap-4">
+            {/* Logo mark */}
+            <div className="relative group">
+              <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-ember-400 via-ember-500 to-ember-600 shadow-lg shadow-ember-500/25 transition-transform duration-300 group-hover:scale-105">
+                <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </div>
+              {/* Pulse ring */}
+              <div className="absolute inset-0 rounded-2xl bg-ember-400/30 animate-ping opacity-20" />
             </div>
-          )}
+
+            {!collapsed && (
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-xl font-display font-bold text-white tracking-tight">
+                  InvoiceAI
+                </span>
+                <span className="text-[10px] text-obsidian-500 font-semibold uppercase tracking-[0.2em]">
+                  Pro Dashboard
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 flex flex-col gap-1.5 px-3 py-6">
+          {navItems.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                style={{ animationDelay: `${index * 50}ms` }}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 group',
+                    'animate-fade-in opacity-0 [animation-fill-mode:forwards]',
+                    isActive
+                      ? 'bg-gradient-to-r from-ember-500/15 to-ember-500/5 text-ember-400'
+                      : 'text-obsidian-400 hover:text-obsidian-100 hover:bg-obsidian-800/40'
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {/* Active indicator bar */}
+                    {isActive && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-ember-400 to-ember-600 rounded-full shadow-lg shadow-ember-500/50" />
+                    )}
+
+                    {/* Icon container */}
+                    <div
+                      className={cn(
+                        'flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300',
+                        isActive
+                          ? 'bg-ember-500/20 shadow-inner'
+                          : 'bg-obsidian-800/60 group-hover:bg-obsidian-700/60'
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          'w-5 h-5 transition-all duration-300',
+                          isActive
+                            ? 'text-ember-400'
+                            : 'text-obsidian-500 group-hover:text-obsidian-300'
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                    </div>
+
+                    {!collapsed && (
+                      <>
+                        <span className={cn(
+                          "font-medium text-[15px] transition-all duration-300",
+                          isActive && "font-semibold"
+                        )}>
+                          {item.label}
+                        </span>
+
+                        {/* Active dot indicator */}
+                        {isActive && (
+                          <div className="ml-auto flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-ember-400 shadow-lg shadow-ember-400/50" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        {/* Bottom section */}
+        <div className="px-3 pb-6">
+          {/* Collapse Toggle */}
+          <button
+            onClick={onToggle}
+            className={cn(
+              "flex items-center justify-center w-full py-3 rounded-xl",
+              "bg-obsidian-800/40 border border-obsidian-700/30",
+              "text-obsidian-500 hover:text-obsidian-200 hover:bg-obsidian-800/60",
+              "transition-all duration-300 group"
+            )}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+                <span className="text-sm font-medium">Collapse</span>
+              </div>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex flex-col gap-1 p-3 mt-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
-                  isActive
-                    ? 'bg-gold-500/10 text-gold-400 shadow-inner-glow'
-                    : 'text-navy-400 hover:text-navy-100 hover:bg-navy-800/50'
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <div
-                    className={cn(
-                      'flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200',
-                      isActive
-                        ? 'bg-gold-500/20'
-                        : 'bg-navy-800/50 group-hover:bg-navy-700/50'
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        'w-4 h-4 transition-colors',
-                        isActive ? 'text-gold-400' : 'text-navy-400 group-hover:text-navy-200'
-                      )}
-                    />
-                  </div>
-                  {!collapsed && (
-                    <span className="font-medium text-sm">{item.label}</span>
-                  )}
-                  {isActive && !collapsed && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-gold-400" />
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={onToggle}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-lg bg-navy-800 border border-navy-700 text-navy-400 hover:text-navy-200 hover:bg-navy-700 transition-all duration-200"
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        {collapsed ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
-      </button>
-
-      {/* Decorative gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gold-500/5 to-transparent pointer-events-none" />
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-ember-500/5 via-violet-500/3 to-transparent pointer-events-none" />
     </aside>
   );
 }
