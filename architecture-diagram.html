@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Processing Architecture - MCP Enhanced</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --border: #2a2a3a;
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --accent-gold: #f5c542;
+      --accent-purple: #a855f7;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-orange: #f97316;
+      --accent-pink: #ec4899;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(245, 197, 66, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 197, 66, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(150px);
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .bg-glow-1 {
+      top: -200px;
+      left: -200px;
+      background: var(--accent-purple);
+    }
+
+    .bg-glow-2 {
+      bottom: -200px;
+      right: -200px;
+      background: var(--accent-gold);
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(245, 197, 66, 0.1);
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent-gold);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Architecture sections */
+    .architecture {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 24px;
+      height: 2px;
+      background: var(--accent-gold);
+    }
+
+    /* Flow diagram */
+    .flow-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flow-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+    }
+
+    /* Main flow */
+    .main-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .node {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-width: 160px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .node:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-gold);
+      box-shadow: 0 8px 32px rgba(245, 197, 66, 0.15);
+    }
+
+    .node-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .node-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .node-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .node-webhook .node-icon { background: linear-gradient(135deg, var(--accent-orange), #ea580c); }
+    .node-code .node-icon { background: linear-gradient(135deg, var(--accent-gold), #ca8a04); }
+    .node-ai .node-icon { background: linear-gradient(135deg, var(--accent-purple), #7c3aed); }
+    .node-response .node-icon { background: linear-gradient(135deg, var(--accent-green), #16a34a); }
+    .node-mcp .node-icon { background: linear-gradient(135deg, var(--accent-cyan), #0891b2); }
+    .node-db .node-icon { background: linear-gradient(135deg, var(--accent-blue), #2563eb); }
+
+    /* Connector arrows */
+    .connector {
+      display: flex;
+      align-items: center;
+      color: var(--border);
+      font-size: 20px;
+    }
+
+    .connector svg {
+      width: 40px;
+      height: 20px;
+    }
+
+    /* MCP Section */
+    .mcp-section {
+      margin-top: 40px;
+      padding-top: 40px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .mcp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .mcp-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mcp-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+    }
+
+    .mcp-card.cyan::before { background: var(--accent-cyan); }
+    .mcp-card.purple::before { background: var(--accent-purple); }
+    .mcp-card.pink::before { background: var(--accent-pink); }
+    .mcp-card.green::before { background: var(--accent-green); }
+
+    .mcp-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .mcp-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .mcp-card.cyan .mcp-card-icon { background: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+    .mcp-card.purple .mcp-card-icon { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+    .mcp-card.pink .mcp-card-icon { background: rgba(236, 72, 153, 0.2); color: var(--accent-pink); }
+    .mcp-card.green .mcp-card-icon { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+
+    .mcp-card-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .mcp-card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .mcp-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mcp-tool {
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-secondary);
+    }
+
+    /* Comparison section */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comparison-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      position: relative;
+    }
+
+    .comparison-card.current {
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .comparison-card.proposed {
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .comparison-badge {
+      position: absolute;
+      top: -12px;
+      left: 24px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .comparison-card.current .comparison-badge {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    .comparison-card.proposed .comparison-badge {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+
+    .comparison-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      margin-top: 8px;
+    }
+
+    .comparison-list {
+      list-style: none;
+    }
+
+    .comparison-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .comparison-list li:last-child {
+      border-bottom: none;
+    }
+
+    .comparison-list li::before {
+      content: '→';
+      color: var(--accent-gold);
+      font-weight: bold;
+    }
+
+    /* Data flow */
+    .data-flow {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 40px;
+    }
+
+    .data-flow-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .data-flow-title span {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 40px 1fr 200px;
+      gap: 20px;
+      align-items: start;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow-step:last-child {
+      border-bottom: none;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--accent-gold);
+    }
+
+    .step-content h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .step-tech {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .tech-tag {
+      padding: 4px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tech-tag.primary {
+      background: rgba(245, 197, 66, 0.1);
+      border-color: rgba(245, 197, 66, 0.3);
+      color: var(--accent-gold);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    /* SVG Icons inline */
+    .icon-webhook::before { content: '🔗'; }
+    .icon-code::before { content: '{ }'; font-family: 'JetBrains Mono', monospace; font-size: 16px; }
+    .icon-ai::before { content: '🤖'; }
+    .icon-response::before { content: '✓'; }
+    .icon-mcp::before { content: '⚡'; }
+    .icon-db::before { content: '🗄️'; }
+    .icon-search::before { content: '🔍'; }
+    .icon-validate::before { content: '✅'; }
+    .icon-expand::before { content: '🔄'; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="container">
+    <header>
+      <div class="badge">Architecture v2.0</div>
+      <h1>Invoice Processing System</h1>
+      <p class="subtitle">MCP-enhanced n8n workflow with Claude Vision API for intelligent document extraction</p>
+    </header>
+
+    <div class="architecture">
+      <!-- Comparison -->
+      <section>
+        <div class="section-title">Current vs Proposed</div>
+        <div class="comparison">
+          <div class="comparison-card current">
+            <div class="comparison-badge">Current State</div>
+            <h3 class="comparison-title">Simple HTTP Request</h3>
+            <ul class="comparison-list">
+              <li>Direct HTTP call to Claude API</li>
+              <li>Single-shot extraction, no iteration</li>
+              <li>No validation or confidence checks</li>
+              <li>Limited error recovery</li>
+              <li>No workflow introspection</li>
+              <li>Static prompt, can't adapt</li>
+            </ul>
+          </div>
+          <div class="comparison-card proposed">
+            <div class="comparison-badge">Proposed - Claude Native</div>
+            <h3 class="comparison-title">Claude Tool Use (No LangChain)</h3>
+            <ul class="comparison-list">
+              <li>Native Claude tool/function calling</li>
+              <li>Iterative tool loop in n8n Code node</li>
+              <li>MCP tools exposed as Claude tools</li>
+              <li>Direct Anthropic API - no abstraction</li>
+              <li>Full control over the agent loop</li>
+              <li>Lighter, faster, more debuggable</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Flow -->
+      <section>
+        <div class="section-title">Proposed Workflow Architecture</div>
+        <div class="flow-container">
+          <div class="main-flow">
+            <div class="node node-webhook">
+              <div class="node-icon icon-webhook"></div>
+              <div class="node-title">Webhook</div>
+              <div class="node-subtitle">POST /process-invoice</div>
+            </div>
+
+            <div class="connector">
+              <svg viewBox="0 0 40 20" fill="none">
+                <path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="node node-code">
+              <div class="node-icon icon-code"></div>
+              <div class="node-title">Prepare Data</div>
+              <div class="node-subtitle">Base64 → Binary</div>
+            </div>
+
+            <div class="connector">
+              <svg viewBox="0 0 40 20" fill="none">
+                <path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="node node-mcp">
+              <div class="node-icon icon-mcp"></div>
+              <div class="node-title">MCP Agent</div>
+              <div class="node-subtitle">AI Tool Loop</div>
+            </div>
+
+            <div class="connector">
+              <svg viewBox="0 0 40 20" fill="none">
+                <path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="node node-code">
+              <div class="node-icon icon-code"></div>
+              <div class="node-title">Validate</div>
+              <div class="node-subtitle">Check confidence</div>
+            </div>
+
+            <div class="connector">
+              <svg viewBox="0 0 40 20" fill="none">
+                <path d="M0 10 H30 M25 5 L30 10 L25 15" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+
+            <div class="node node-response">
+              <div class="node-icon icon-response"></div>
+              <div class="node-title">Respond</div>
+              <div class="node-subtitle">JSON response</div>
+            </div>
+          </div>
+
+          <!-- MCP Tools Section -->
+          <div class="mcp-section">
+            <div class="section-title">MCP Server Tools (Available to AI Agent)</div>
+            <div class="mcp-grid">
+              <div class="mcp-card cyan">
+                <div class="mcp-card-header">
+                  <div class="mcp-card-icon">🔍</div>
+                  <div class="mcp-card-title">n8n MCP Server</div>
+                </div>
+                <div class="mcp-card-desc">
+                  Workflow management and introspection. The AI can search nodes, validate configs, access templates, and even modify the workflow dynamically.
+                </div>
+                <div class="mcp-tools">
+                  <span class="mcp-tool">search_nodes</span>
+                  <span class="mcp-tool">get_node</span>
+                  <span class="mcp-tool">validate_node</span>
+                  <span class="mcp-tool">search_templates</span>
+                  <span class="mcp-tool">validate_workflow</span>
+                </div>
+              </div>
+
+              <div class="mcp-card purple">
+                <div class="mcp-card-header">
+                  <div class="mcp-card-icon">📄</div>
+                  <div class="mcp-card-title">Document Extraction</div>
+                </div>
+                <div class="mcp-card-desc">
+                  Custom MCP tools for invoice-specific extraction. Parse line items, validate totals, extract vendor info with field-level confidence.
+                </div>
+                <div class="mcp-tools">
+                  <span class="mcp-tool">extract_invoice_fields</span>
+                  <span class="mcp-tool">parse_line_items</span>
+                  <span class="mcp-tool">validate_totals</span>
+                  <span class="mcp-tool">detect_currency</span>
+                </div>
+              </div>
+
+              <div class="mcp-card pink">
+                <div class="mcp-card-header">
+                  <div class="mcp-card-icon">🗄️</div>
+                  <div class="mcp-card-title">Supabase MCP</div>
+                </div>
+                <div class="mcp-card-desc">
+                  Direct database access for validation. Check for duplicate invoices, lookup vendor history, verify against existing records.
+                </div>
+                <div class="mcp-tools">
+                  <span class="mcp-tool">query_invoices</span>
+                  <span class="mcp-tool">lookup_vendor</span>
+                  <span class="mcp-tool">check_duplicate</span>
+                  <span class="mcp-tool">insert_record</span>
+                </div>
+              </div>
+
+              <div class="mcp-card green">
+                <div class="mcp-card-header">
+                  <div class="mcp-card-icon">🌐</div>
+                  <div class="mcp-card-title">External Services</div>
+                </div>
+                <div class="mcp-card-desc">
+                  Integration with external APIs for enrichment. Validate tax IDs, lookup company info, currency conversion rates.
+                </div>
+                <div class="mcp-tools">
+                  <span class="mcp-tool">validate_tax_id</span>
+                  <span class="mcp-tool">company_lookup</span>
+                  <span class="mcp-tool">currency_convert</span>
+                  <span class="mcp-tool">address_validate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Flow -->
+      <section>
+        <div class="section-title">Data Flow Detail</div>
+        <div class="data-flow">
+          <div class="data-flow-title">
+            <span>📋</span>
+            Processing Pipeline
+          </div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4>Invoice Upload</h4>
+                <p>Frontend sends PDF/image as base64 via webhook. File is validated for type and size before processing.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">Webhook</span>
+                <span class="tech-tag">POST</span>
+                <span class="tech-tag">JSON</span>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4>Claude Tool Use Initialization</h4>
+                <p>n8n Code node calls Anthropic API directly with tool definitions. No LangChain - pure Claude tool calling.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">Anthropic API</span>
+                <span class="tech-tag">Tool Use</span>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4>Document Analysis</h4>
+                <p>Claude Vision analyzes the document. Uses MCP tools iteratively to extract and validate each field with confidence scoring.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">Vision API</span>
+                <span class="tech-tag">MCP Tools</span>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h4>Cross-Validation</h4>
+                <p>Agent uses Supabase MCP to check for duplicates, validate vendor exists, and verify extracted amounts against historical data.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">Supabase MCP</span>
+                <span class="tech-tag">SQL</span>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <h4>Confidence Evaluation</h4>
+                <p>If confidence < 85%, agent re-extracts uncertain fields. Low confidence items are flagged for human review.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">Validation</span>
+                <span class="tech-tag">Retry Logic</span>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="step-number">6</div>
+              <div class="step-content">
+                <h4>Response & Storage</h4>
+                <p>Extracted data returned to frontend. Frontend stores in Supabase with file URL, extracted fields, and confidence scores.</p>
+              </div>
+              <div class="step-tech">
+                <span class="tech-tag primary">JSON Response</span>
+                <span class="tech-tag">Supabase</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Key Benefits -->
+      <section>
+        <div class="section-title">Why MCP Matters</div>
+        <div class="mcp-grid">
+          <div class="mcp-card cyan">
+            <div class="mcp-card-header">
+              <div class="mcp-card-icon">🔄</div>
+              <div class="mcp-card-title">Iterative Refinement</div>
+            </div>
+            <div class="mcp-card-desc">
+              Unlike single-shot API calls, MCP allows the AI to call tools multiple times, refining extraction until confidence thresholds are met.
+            </div>
+          </div>
+
+          <div class="mcp-card purple">
+            <div class="mcp-card-header">
+              <div class="mcp-card-icon">🧠</div>
+              <div class="mcp-card-title">Context Awareness</div>
+            </div>
+            <div class="mcp-card-desc">
+              AI can query existing data (vendors, past invoices) to inform extraction decisions and catch anomalies automatically.
+            </div>
+          </div>
+
+          <div class="mcp-card pink">
+            <div class="mcp-card-header">
+              <div class="mcp-card-icon">🔧</div>
+              <div class="mcp-card-title">Self-Modification</div>
+            </div>
+            <div class="mcp-card-desc">
+              With n8n MCP, the workflow can potentially inspect and optimize itself based on extraction patterns and errors.
+            </div>
+          </div>
+
+          <div class="mcp-card green">
+            <div class="mcp-card-header">
+              <div class="mcp-card-icon">📊</div>
+              <div class="mcp-card-title">Rich Validation</div>
+            </div>
+            <div class="mcp-card-desc">
+              Built-in validation tools ensure data quality: check totals match line items, validate dates, verify currency formats.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <p>Architecture designed for <strong>Invoice Dashboard</strong> • Powered by <a href="#">n8n + MCP + Claude</a></p>
+    </footer>
+  </div>
+</body>
+</html>

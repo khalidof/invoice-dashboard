@@ -1,0 +1,82 @@
+{
+  "name": "Invoice Tools MCP Server",
+  "id": "pJuNchSXpVGK0mDG",
+  "nodes": [
+    {
+      "id": "mcp-trigger",
+      "name": "MCP Server",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "position": [0, 300],
+      "parameters": {
+        "path": "invoice-tools",
+        "authentication": "none"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "extract-header",
+      "name": "Extract Header",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "position": [300, 100],
+      "parameters": {
+        "name": "extract_invoice_header",
+        "description": "Extract header information from invoice text: invoice number, date, due date, vendor name, vendor address. Input should be the raw text or description of the invoice.",
+        "language": "javaScript",
+        "jsCode": "// Extract invoice header fields\nconst input = $input.first().json;\nconst text = input.query || input.text || '';\n\n// This is a placeholder - in real implementation,\n// this would call Claude Vision API or process the document\nreturn {\n  invoice_number: null,\n  invoice_date: null,\n  due_date: null,\n  vendor_name: null,\n  vendor_address: null,\n  confidence: 0,\n  message: 'Header extraction tool called. Provide invoice text for extraction.'\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "extract-items",
+      "name": "Extract Line Items",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "position": [300, 300],
+      "parameters": {
+        "name": "extract_line_items",
+        "description": "Extract line items from invoice: descriptions, quantities, unit prices, and amounts. Input should be the invoice text or document content.",
+        "language": "javaScript",
+        "jsCode": "// Extract line items from invoice\nconst input = $input.first().json;\nconst text = input.query || input.text || '';\n\nreturn {\n  items: [],\n  confidence: 0,\n  message: 'Line items extraction tool called. Provide invoice content for extraction.'\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "extract-totals",
+      "name": "Extract Totals",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "position": [300, 500],
+      "parameters": {
+        "name": "extract_totals",
+        "description": "Extract financial totals from invoice: subtotal, tax rate, tax amount, discounts, total, and currency. Input should be the invoice text.",
+        "language": "javaScript",
+        "jsCode": "// Extract totals from invoice\nconst input = $input.first().json;\n\nreturn {\n  subtotal: null,\n  tax_rate: null,\n  tax_amount: null,\n  discount: 0,\n  total: null,\n  currency: 'USD',\n  confidence: 0,\n  message: 'Totals extraction tool called.'\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "validate",
+      "name": "Validate Extraction",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "position": [550, 200],
+      "parameters": {
+        "name": "validate_invoice_data",
+        "description": "Validate extracted invoice data for consistency. Checks if line items sum to subtotal, dates are valid, required fields present. Input should be JSON with extracted data.",
+        "language": "javaScript",
+        "jsCode": "// Validate invoice extraction\nconst input = $input.first().json;\nconst data = input.data || input;\n\nconst issues = [];\nconst suggestions = [];\n\n// Check required fields\nif (!data.invoice_number) issues.push('Missing invoice number');\nif (!data.total) issues.push('Missing total amount');\nif (!data.vendor_name) issues.push('Missing vendor name');\n\n// Check date validity\nif (data.invoice_date && data.due_date) {\n  const invoiceDate = new Date(data.invoice_date);\n  const dueDate = new Date(data.due_date);\n  if (dueDate < invoiceDate) {\n    issues.push('Due date is before invoice date');\n  }\n}\n\n// Check line items sum\nif (data.items && data.items.length > 0 && data.subtotal) {\n  const itemsSum = data.items.reduce((sum, item) => sum + (item.amount || 0), 0);\n  if (Math.abs(itemsSum - data.subtotal) > 0.01) {\n    issues.push(`Line items sum (${itemsSum}) doesn't match subtotal (${data.subtotal})`);\n  }\n}\n\nreturn {\n  is_valid: issues.length === 0,\n  issues: issues,\n  suggestions: suggestions,\n  fields_checked: ['invoice_number', 'total', 'vendor_name', 'dates', 'line_items_sum']\n};"
+      },
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "MCP Server": {
+      "ai_tool": [
+        [{"node": "Extract Header", "type": "ai_tool", "index": 0}],
+        [{"node": "Extract Line Items", "type": "ai_tool", "index": 0}],
+        [{"node": "Extract Totals", "type": "ai_tool", "index": 0}],
+        [{"node": "Validate Extraction", "type": "ai_tool", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

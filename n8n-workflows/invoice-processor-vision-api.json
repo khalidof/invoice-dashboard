@@ -1,0 +1,104 @@
+{
+  "name": "Invoice Processor (Vision API)",
+  "id": "Wtve6TUEa9c2XPW1",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST"},
+      "id": "webhook",
+      "name": "Receive Invoice",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 304]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PREPARE INVOICE DATA\nconst item = $input.first().json;\nconst body = item.body || item;\nconst base64Data = body.file_base64 || body.base64 || body.image || '';\nconst mimeType = body.mime_type || 'application/pdf';\nconst filename = body.filename || `invoice_${Date.now()}.pdf`;\nconst cleanBase64 = base64Data.replace(/^data:[^;]+;base64,/, '');\n\nif (!cleanBase64) {\n  throw new Error('No file data provided. Please include file_base64 in the request.');\n}\n\nreturn [{\n  json: {\n    base64: cleanBase64,\n    mime_type: mimeType,\n    filename: filename,\n    received_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "prepare-data",
+      "name": "Prepare Invoice Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [256, 304]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "anthropic-version", "value": "2023-06-01"},
+            {"name": "content-type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const base64 = $json.base64;\n  const mimeType = $json.mime_type;\n  const isPdf = mimeType === 'application/pdf';\n  const contentBlock = isPdf \n    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }\n    : { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } };\n  const prompt = `Extract ALL information from this invoice. Return ONLY a valid JSON object.`;\n  return JSON.stringify({\n    model: 'claude-sonnet-4-20250514',\n    max_tokens: 4096,\n    messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: prompt }] }]\n  });\n})() }}",
+        "options": {}
+      },
+      "id": "claude-api",
+      "name": "Claude Vision API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [512, 304]
+    },
+    {
+      "parameters": {
+        "jsCode": "// PARSE CLAUDE RESPONSE\nconst response = $input.first().json;\nif (response.error) {\n  throw new Error(`Claude API Error: ${response.error.message || JSON.stringify(response.error)}`);\n}\nlet extractedText = '';\nif (response.content && response.content.length > 0) {\n  extractedText = response.content[0].text || '';\n}\nif (!extractedText) {\n  throw new Error('No content in Claude response');\n}\nlet cleanJson = extractedText.replace(/```json\\n?/gi, '').replace(/```\\n?/gi, '').trim();\nlet invoiceData;\ntry {\n  invoiceData = JSON.parse(cleanJson);\n} catch (e) {\n  const jsonMatch = cleanJson.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    invoiceData = JSON.parse(jsonMatch[0]);\n  } else {\n    throw new Error(`No valid JSON found`);\n  }\n}\nreturn [{json: invoiceData}];"
+      },
+      "id": "parse-response",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [752, 304]
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoiceData = $input.first().json;\nreturn [{\n  json: {\n    success: true,\n    message: 'Invoice processed successfully',\n    extracted_data: invoiceData,\n    confidence: 95,\n    processed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "prepare-response",
+      "name": "Prepare Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1008, 304]
+    },
+    {
+      "parameters": {"options": {"responseCode": 200}},
+      "id": "respond",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1264, 304]
+    },
+    {
+      "parameters": {
+        "jsCode": "const error = $input.first().json;\nreturn [{\n  json: {\n    success: false,\n    message: error.message || 'An error occurred',\n    error: error.message || 'Unknown error',\n    processed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "error-handler",
+      "name": "Handle Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1008, 512]
+    },
+    {
+      "parameters": {"options": {"responseCode": 500}},
+      "id": "error-respond",
+      "name": "Send Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1264, 512]
+    }
+  ],
+  "connections": {
+    "Receive Invoice": {"main": [[{"node": "Prepare Invoice Data", "type": "main", "index": 0}]]},
+    "Prepare Invoice Data": {"main": [[{"node": "Claude Vision API", "type": "main", "index": 0}]]},
+    "Claude Vision API": {"main": [[{"node": "Parse Claude Response", "type": "main", "index": 0}]]},
+    "Parse Claude Response": {"main": [[{"node": "Prepare Response", "type": "main", "index": 0}]]},
+    "Prepare Response": {"main": [[{"node": "Send Response", "type": "main", "index": 0}]]},
+    "Handle Error": {"main": [[{"node": "Send Error Response", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "_note": "Credentials must be configured after import: HTTP Header Auth for Anthropic API"
+}

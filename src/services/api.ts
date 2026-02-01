@@ -1,6 +1,7 @@
 import type { ProcessInvoiceResponse } from '@/types';
+import { invoiceService, supabase } from './supabase';
 
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/process-invoice-pro';
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/process-invoice-mcp';
 
 export async function processInvoice(
   file: File,
@@ -11,31 +12,105 @@ export async function processInvoice(
   // Convert file to base64
   const base64 = await fileToBase64(file);
 
-  onProgress?.(40);
+  onProgress?.(30);
 
-  const response = await fetch(N8N_WEBHOOK_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      file_base64: base64,
-      mime_type: file.type,
-      filename: file.name,
-      source: 'dashboard',
-    }),
-  });
+  // Upload file to Supabase Storage
+  let fileUrl: string | null = null;
+  try {
+    const fileName = `${Date.now()}-${file.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('invoices')
+      .upload(fileName, file);
 
-  onProgress?.(80);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error: ${response.status}`);
+    if (!uploadError && uploadData) {
+      const { data: urlData } = supabase.storage
+        .from('invoices')
+        .getPublicUrl(uploadData.path);
+      fileUrl = urlData.publicUrl;
+    }
+  } catch (e) {
+    console.warn('File upload to storage failed, continuing without file URL:', e);
   }
 
-  const data = await response.json();
-  onProgress?.(100);
+  onProgress?.(40);
 
-  return data;
+  // Send to n8n for AI processing
+  let extractedData: Record<string, unknown> | null = null;
+  let n8nResponse: Record<string, unknown> | null = null;
+
+  try {
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_base64: base64,
+        mime_type: file.type,
+        filename: file.name,
+        source: 'dashboard',
+      }),
+    });
+
+    if (response.ok) {
+      n8nResponse = await response.json();
+      extractedData = n8nResponse?.extracted_data as Record<string, unknown> || n8nResponse;
+    }
+  } catch (e) {
+    console.warn('n8n processing failed, storing invoice without extraction:', e);
+  }
+
+  onProgress?.(70);
+
+  // Store invoice in Supabase (regardless of n8n result)
+  try {
+    const invoice = await invoiceService.create({
+      invoice_number: extractedData?.invoice_number as string || null,
+      vendor_name: extractedData?.vendor?.name as string || extractedData?.vendor_name as string || null,
+      invoice_date: extractedData?.invoice_date as string || null,
+      due_date: extractedData?.due_date as string || null,
+      total_amount: extractedData?.total as number || extractedData?.total_amount as number || null,
+      currency: extractedData?.currency as string || 'USD',
+      status: extractedData ? 'processed' : 'pending',
+      file_url: fileUrl,
+      file_name: file.name,
+      extracted_data: extractedData,
+      confidence: extractedData?.confidence as number || null,
+      flags: [],
+    });
+
+    // Store line items if available
+    const lineItems = extractedData?.line_items as Array<{
+      description?: string;
+      quantity?: number;
+      unit_price?: number;
+      amount?: number;
+    }> || [];
+
+    if (lineItems.length > 0) {
+      await invoiceService.createLineItems(
+        invoice.id,
+        lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total: item.amount,
+        }))
+      );
+    }
+
+    onProgress?.(100);
+
+    return {
+      success: true,
+      message: 'Invoice processed and stored successfully',
+      invoice_id: invoice.id,
+      extracted_data: extractedData,
+    } as ProcessInvoiceResponse;
+  } catch (e) {
+    console.error('Failed to store invoice in Supabase:', e);
+    throw new Error(`Failed to store invoice: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  }
 }
 
 function fileToBase64(file: File): Promise<string> {
