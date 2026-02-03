@@ -8,6 +8,7 @@ interface PageContainerProps {
   children: ReactNode;
   className?: string;
   fullWidth?: boolean;
+  headerExtra?: ReactNode;
 }
 
 export function PageContainer({
@@ -16,10 +17,11 @@ export function PageContainer({
   children,
   className,
   fullWidth = false,
+  headerExtra,
 }: PageContainerProps) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header title={title} subtitle={subtitle} />
+      <Header title={title} subtitle={subtitle} extra={headerExtra} />
       <div
         className={cn(
           'flex-1 p-6',

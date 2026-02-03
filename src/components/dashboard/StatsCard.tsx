@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/utils';
 
 interface StatsCardProps {
@@ -13,30 +13,8 @@ interface StatsCardProps {
   };
   loading?: boolean;
   accentColor?: 'ember' | 'violet' | 'mint' | 'azure';
+  variant?: 'default' | 'dark' | 'orange';
 }
-
-const accentStyles = {
-  ember: {
-    iconBg: 'bg-gradient-to-br from-ember-500/20 to-ember-600/10',
-    iconColor: 'text-ember-400',
-    glow: 'bg-ember-500/10',
-  },
-  violet: {
-    iconBg: 'bg-gradient-to-br from-violet-500/20 to-violet-600/10',
-    iconColor: 'text-violet-400',
-    glow: 'bg-violet-500/10',
-  },
-  mint: {
-    iconBg: 'bg-gradient-to-br from-mint-500/20 to-mint-600/10',
-    iconColor: 'text-mint-400',
-    glow: 'bg-mint-500/10',
-  },
-  azure: {
-    iconBg: 'bg-gradient-to-br from-azure-500/20 to-azure-600/10',
-    iconColor: 'text-azure-400',
-    glow: 'bg-azure-500/10',
-  },
-};
 
 export function StatsCard({
   title,
@@ -46,81 +24,123 @@ export function StatsCard({
   trend,
   loading,
   accentColor = 'ember',
+  variant = 'default',
 }: StatsCardProps) {
   const isPositiveTrend = trend && trend.value >= 0;
-  const accent = accentStyles[accentColor];
 
   if (loading) {
     return (
-      <div className="stat-card">
-        <div className="flex items-start justify-between mb-6">
-          <div className="w-12 h-12 rounded-2xl skeleton" />
-          <div className="w-20 h-7 rounded-full skeleton" />
+      <div className="glass-card p-5">
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-10 h-10 rounded-lg skeleton" />
+          <div className="w-16 h-6 rounded-full skeleton" />
         </div>
-        <div className="space-y-3">
-          <div className="w-32 h-10 rounded-lg skeleton" />
-          <div className="w-24 h-4 rounded skeleton" />
+        <div className="space-y-2">
+          <div className="w-24 h-8 rounded skeleton" />
+          <div className="w-32 h-4 rounded skeleton" />
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="stat-card group relative">
-      {/* Accent glow on hover */}
-      <div className={cn(
-        "absolute -inset-px rounded-[21px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm",
-        accent.glow
-      )} />
-
-      <div className="relative">
-        <div className="flex items-start justify-between mb-6">
-          {/* Icon */}
-          <div className={cn(
-            "flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 group-hover:scale-105",
-            accent.iconBg
-          )}>
-            <div className={accent.iconColor}>
-              {icon}
-            </div>
+  // Dark variant (like "Time Saved" card in reference)
+  if (variant === 'dark') {
+    return (
+      <div className="feature-card-dark">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10">
+            <div className="text-white">{icon}</div>
           </div>
+          <span className="text-sm font-medium text-slate-300">{title}</span>
+        </div>
+        <h3 className="text-3xl font-display font-bold text-white mb-1">
+          {value}
+        </h3>
+        {(subtitle || trend) && (
+          <p className="text-sm text-slate-400">
+            {subtitle || trend?.label}
+          </p>
+        )}
+      </div>
+    );
+  }
 
-          {/* Trend badge */}
-          {trend && (
-            <div
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300',
-                isPositiveTrend
-                  ? 'bg-gradient-to-r from-mint-500/15 to-mint-500/5 text-mint-400 border border-mint-500/20'
-                  : 'bg-gradient-to-r from-rose-500/15 to-rose-500/5 text-rose-400 border border-rose-500/20'
-              )}
-            >
-              {isPositiveTrend ? (
-                <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-              ) : (
-                <ArrowDownRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-              )}
-              <span>{Math.abs(trend.value)}%</span>
-            </div>
-          )}
+  // Orange variant (like "Cost Savings" card in reference)
+  if (variant === 'orange') {
+    return (
+      <div className="feature-card-orange">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20">
+            <div className="text-white">{icon}</div>
+          </div>
+          <span className="text-sm font-medium text-orange-100">{title}</span>
+        </div>
+        <h3 className="text-3xl font-display font-bold text-white mb-1">
+          {value}
+        </h3>
+        {(subtitle || trend) && (
+          <p className="text-sm text-orange-100/80">
+            {subtitle || trend?.label}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Default white card variant
+  const iconColors = {
+    ember: 'text-orange-500 bg-orange-50',
+    violet: 'text-violet-500 bg-violet-50',
+    mint: 'text-green-500 bg-green-50',
+    azure: 'text-blue-500 bg-blue-50',
+  };
+
+  return (
+    <div className="glass-card p-5">
+      <div className="flex items-start justify-between mb-4">
+        {/* Icon */}
+        <div className={cn(
+          "flex items-center justify-center w-10 h-10 rounded-lg",
+          iconColors[accentColor]
+        )}>
+          {icon}
         </div>
 
-        <div className="space-y-2">
-          {/* Value */}
-          <h3 className="text-3xl font-display font-bold text-white tracking-tight">
-            {value}
-          </h3>
+        {/* Trend badge */}
+        {trend && (
+          <div
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
+              isPositiveTrend
+                ? 'bg-green-50 text-green-600'
+                : 'bg-red-50 text-red-600'
+            )}
+          >
+            {isPositiveTrend ? (
+              <ArrowUpRight className="w-3 h-3" />
+            ) : (
+              <ArrowDownRight className="w-3 h-3" />
+            )}
+            <span>{Math.abs(trend.value)}%</span>
+          </div>
+        )}
+      </div>
 
-          {/* Title */}
-          <p className="text-sm font-medium text-obsidian-400">{title}</p>
+      <div className="space-y-1">
+        {/* Value */}
+        <h3 className="text-2xl font-display font-bold text-slate-900">
+          {value}
+        </h3>
 
-          {/* Subtitle or trend label */}
-          {(subtitle || trend) && (
-            <p className="text-xs text-obsidian-500">
-              {subtitle || trend?.label}
-            </p>
-          )}
-        </div>
+        {/* Title */}
+        <p className="text-sm text-slate-500">{title}</p>
+
+        {/* Subtitle or trend label */}
+        {(subtitle || trend) && (
+          <p className="text-xs text-slate-400">
+            {subtitle || trend?.label}
+          </p>
+        )}
       </div>
     </div>
   );

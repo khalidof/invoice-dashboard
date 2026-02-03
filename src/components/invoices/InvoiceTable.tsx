@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronUp,
   ChevronDown,
   Eye,
   Trash2,
-  MoreHorizontal,
   Check,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '@/utils';
@@ -55,7 +53,6 @@ export function InvoiceTable({
   onSort,
   loading,
 }: InvoiceTableProps) {
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const allSelected = invoices.length > 0 && selectedIds.length === invoices.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < invoices.length;
 
@@ -194,48 +191,22 @@ export function InvoiceTable({
                   <Link
                     to={`/invoices/${invoice.id}`}
                     className="p-1.5 rounded-lg text-navy-400 hover:text-navy-200 hover:bg-navy-800 transition-colors"
+                    title="View details"
                   >
                     <Eye className="w-4 h-4" />
                   </Link>
-                  <button
-                    onClick={() =>
-                      setMenuOpen(menuOpen === invoice.id ? null : invoice.id)
-                    }
-                    className="p-1.5 rounded-lg text-navy-400 hover:text-navy-200 hover:bg-navy-800 transition-colors"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </button>
-
-                  {/* Dropdown menu */}
-                  {menuOpen === invoice.id && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setMenuOpen(null)}
-                      />
-                      <div className="absolute right-0 top-full mt-1 z-20 w-36 py-1 bg-navy-800 border border-navy-700 rounded-lg shadow-lg">
-                        <Link
-                          to={`/invoices/${invoice.id}`}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-navy-200 hover:bg-navy-700 transition-colors"
-                          onClick={() => setMenuOpen(null)}
-                        >
-                          <Eye className="w-4 h-4" />
-                          View Details
-                        </Link>
-                        {onDelete && (
-                          <button
-                            onClick={() => {
-                              onDelete(invoice.id);
-                              setMenuOpen(null);
-                            }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-error-400 hover:bg-navy-700 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    </>
+                  {onDelete && (
+                    <button
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this invoice?')) {
+                          onDelete(invoice.id);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg text-navy-400 hover:text-error-400 hover:bg-error-500/10 transition-colors"
+                      title="Delete invoice"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </td>

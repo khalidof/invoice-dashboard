@@ -1,0 +1,114 @@
+{
+  "name": "Invoice Processor v2 (Fixed)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-mcp-v2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and validate input data\nconst input = $input.first().json;\nconst body = input.body || input;\n\nconst base64 = body.file_base64 || body.base64 || '';\nconst mimeType = body.mime_type || 'application/pdf';\nconst filename = body.filename || 'invoice.pdf';\n\n// Remove data URL prefix if present\nconst cleanBase64 = base64.replace(/^data:[^;]+;base64,/, '');\n\nif (!cleanBase64) {\n  throw new Error('No file data provided. Include file_base64 in request.');\n}\n\nreturn [{\n  json: {\n    base64: cleanBase64,\n    mime_type: mimeType,\n    filename: filename\n  }\n}];"
+      },
+      "id": "prepare",
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const base64 = $json.base64;\n  const mimeType = $json.mime_type;\n  const isPdf = mimeType === 'application/pdf';\n  \n  const contentBlock = isPdf\n    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }\n    : { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } };\n  \n  const prompt = `Extract ALL invoice data from this document. Return a JSON object with EXACTLY these fields:\n\n{\n  \"invoice_number\": \"string\",\n  \"vendor_name\": \"string\", \n  \"invoice_date\": \"YYYY-MM-DD\",\n  \"due_date\": \"YYYY-MM-DD or null\",\n  \"total_amount\": number,\n  \"currency\": \"USD\",\n  \"line_items\": [{\"description\": \"string\", \"quantity\": number, \"unit_price\": number, \"amount\": number}],\n  \"subtotal\": number,\n  \"tax_amount\": number or null,\n  \"confidence\": 0.95\n}\n\nRules:\n- Dates in YYYY-MM-DD format\n- Numbers without currency symbols\n- Use null for missing fields\n- Return ONLY valid JSON`;\n  \n  return JSON.stringify({\n    model: 'claude-sonnet-4-20250514',\n    max_tokens: 4096,\n    messages: [{\n      role: 'user',\n      content: [contentBlock, { type: 'text', text: prompt }]\n    }]\n  });\n})() }}",
+        "options": {}
+      },
+      "id": "claude-api",
+      "name": "Claude Vision API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Claude's response\nconst response = $input.first().json;\n\nif (response.error) {\n  throw new Error(`Claude API Error: ${response.error.message}`);\n}\n\nlet text = '';\nif (response.content && response.content[0]) {\n  text = response.content[0].text || '';\n}\n\n// Clean and parse JSON\nlet clean = text.replace(/```json\\n?/gi, '').replace(/```\\n?/gi, '').trim();\nlet data;\n\ntry {\n  data = JSON.parse(clean);\n} catch (e) {\n  const match = clean.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    data = JSON.parse(match[0]);\n  } else {\n    throw new Error('Could not parse JSON from Claude response');\n  }\n}\n\nreturn [{ json: data }];"
+      },
+      "id": "parse",
+      "name": "Parse JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "invoices",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').item.json.body.invoice_id || $('Webhook').item.json.invoice_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldName": "invoice_number", "fieldValue": "={{ $json.invoice_number }}" },
+            { "fieldName": "vendor_name", "fieldValue": "={{ $json.vendor_name }}" },
+            { "fieldName": "invoice_date", "fieldValue": "={{ $json.invoice_date }}" },
+            { "fieldName": "due_date", "fieldValue": "={{ $json.due_date }}" },
+            { "fieldName": "total_amount", "fieldValue": "={{ $json.total_amount }}" },
+            { "fieldName": "currency", "fieldValue": "={{ $json.currency || 'USD' }}" },
+            { "fieldName": "status", "fieldValue": "processed" },
+            { "fieldName": "extracted_data", "fieldValue": "={{ JSON.stringify($json) }}" },
+            { "fieldName": "confidence", "fieldValue": "={{ $json.confidence || 0.95 }}" }
+          ]
+        }
+      },
+      "id": "supabase",
+      "name": "Save to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, extracted_data: $('Parse JSON').item.json } }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Prepare Data", "type": "main", "index": 0 }]] },
+    "Prepare Data": { "main": [[{ "node": "Claude Vision API", "type": "main", "index": 0 }]] },
+    "Claude Vision API": { "main": [[{ "node": "Parse JSON", "type": "main", "index": 0 }]] },
+    "Parse JSON": { "main": [[{ "node": "Save to Supabase", "type": "main", "index": 0 }]] },
+    "Save to Supabase": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -120,6 +120,64 @@ export const invoiceService = {
     if (error) throw error;
   },
 
+  async create(invoice: {
+    invoice_number?: string;
+    vendor_name?: string;
+    invoice_date?: string;
+    due_date?: string;
+    total_amount?: number;
+    currency?: string;
+    status?: InvoiceStatus;
+    file_url?: string;
+    file_name?: string;
+    extracted_data?: Record<string, unknown>;
+    confidence?: number;
+    flags?: string[];
+  }) {
+    const { data, error } = await supabase
+      .from('invoices')
+      .insert({
+        ...invoice,
+        status: invoice.status || 'pending',
+        currency: invoice.currency || 'USD',
+        flags: invoice.flags || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        uploaded_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Invoice;
+  },
+
+  async createLineItems(invoiceId: string, lineItems: Array<{
+    description?: string;
+    quantity?: number;
+    unit_price?: number;
+    total?: number;
+  }>) {
+    if (!lineItems || lineItems.length === 0) return [];
+
+    const items = lineItems.map(item => ({
+      invoice_id: invoiceId,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total: item.total,
+      created_at: new Date().toISOString(),
+    }));
+
+    const { data, error } = await supabase
+      .from('invoice_line_items')
+      .insert(items)
+      .select();
+
+    if (error) throw error;
+    return data as InvoiceLineItemDB[];
+  },
+
   async getStats() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

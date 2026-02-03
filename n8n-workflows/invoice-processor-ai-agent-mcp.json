@@ -5,7 +5,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "process-invoice-mcp",
+        "path": "invoice-mcp-v2",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -18,7 +18,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are an invoice extraction AI. Analyze the provided invoice and extract all relevant information.\n\nInvoice filename: {{ $json.filename }}\nMIME type: {{ $json.mime_type }}\n\nUse the available tools to:\n1. Extract header information (invoice number, dates, vendor)\n2. Extract all line items\n3. Extract totals (subtotal, tax, total)\n4. Validate the extracted data\n\nReturn a structured JSON response with all extracted fields and confidence scores.",
+        "text": "=You are an invoice extraction AI. Analyze the provided invoice and extract all relevant information.\n\nInvoice filename: {{ $json.filename }}\nMIME type: {{ $json.mime_type }}\n\n**IMPORTANT: The invoice content is provided below as base64-encoded data. You MUST decode and analyze this actual document content.**\n\nInvoice content (base64): {{ $json.file_base64 }}\n\nUse the available tools to:\n1. Extract header information (invoice number, dates, vendor)\n2. Extract all line items\n3. Extract totals (subtotal, tax, total)\n4. Validate the extracted data\n\nReturn a structured JSON response with all extracted fields and confidence scores.",
         "options": {
           "systemMessage": "You are an expert invoice extraction assistant. You have access to tools for extracting and validating invoice data. Always validate your extractions before returning results. Be thorough and accurate."
         }

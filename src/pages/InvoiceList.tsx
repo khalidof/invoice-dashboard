@@ -8,6 +8,7 @@ import {
   ChevronRight,
   X,
   CheckSquare,
+  Plus,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout';
 import { InvoiceTable } from '@/components/invoices';
@@ -96,23 +97,33 @@ export function InvoiceList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this invoice?')) {
-      await deleteInvoice.mutateAsync(id);
-    }
+    await deleteInvoice.mutateAsync(id);
   };
 
   if (error) {
     return (
       <PageContainer title="Invoices">
         <div className="text-center py-12">
-          <p className="text-error-400">Failed to load invoices</p>
+          <p className="text-red-500">Failed to load invoices</p>
         </div>
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer title="Invoices" subtitle={`${data?.count ?? 0} total invoices`}>
+    <PageContainer
+      title="Invoices"
+      subtitle={`${data?.count ?? 0} total invoices`}
+      headerExtra={
+        <Button
+          variant="primary"
+          icon={<Plus className="w-4 h-4" />}
+          onClick={() => navigate('/upload')}
+        >
+          Upload Invoice
+        </Button>
+      }
+    >
       <div className="space-y-4">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -120,7 +131,7 @@ export function InvoiceList() {
             {/* Search */}
             <form onSubmit={handleSearch} className="flex-1 sm:flex-initial">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search invoices..."
@@ -135,7 +146,7 @@ export function InvoiceList() {
                       setSearchInput('');
                       updateParams({ search: undefined, page: '1' });
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-500 hover:text-navy-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -152,7 +163,7 @@ export function InvoiceList() {
             >
               Filters
               {status && (
-                <span className="ml-1 w-2 h-2 rounded-full bg-gold-400" />
+                <span className="ml-1 w-2 h-2 rounded-full bg-orange-500" />
               )}
             </Button>
           </div>
@@ -160,8 +171,8 @@ export function InvoiceList() {
           <div className="flex items-center gap-3">
             {/* Bulk actions */}
             {selectedIds.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-500/10 border border-gold-500/20">
-                <span className="text-sm text-gold-400">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200">
+                <span className="text-sm text-orange-700 font-medium">
                   {selectedIds.length} selected
                 </span>
                 <Button
@@ -175,7 +186,7 @@ export function InvoiceList() {
                 </Button>
                 <button
                   onClick={() => setSelectedIds([])}
-                  className="p-1 text-navy-400 hover:text-navy-200"
+                  className="p-1 text-slate-400 hover:text-slate-600"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -194,15 +205,15 @@ export function InvoiceList() {
 
         {/* Filters */}
         {showFilters && (
-          <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-navy-900/50 border border-navy-800 animate-scale-in">
-            <span className="text-sm text-navy-400 self-center mr-2">Status:</span>
+          <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-white border border-slate-200 shadow-sm animate-scale-in">
+            <span className="text-sm text-slate-500 self-center mr-2">Status:</span>
             <button
               onClick={() => updateParams({ status: undefined, page: '1' })}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                 !status
-                  ? 'bg-gold-500/20 text-gold-400 border border-gold-500/30'
-                  : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800'
+                  ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
               )}
             >
               All
@@ -214,8 +225,8 @@ export function InvoiceList() {
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors',
                   status === s
-                    ? 'bg-gold-500/20 text-gold-400 border border-gold-500/30'
-                    : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800'
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
                 )}
               >
                 {s}
@@ -270,7 +281,7 @@ export function InvoiceList() {
 
             {/* Pagination */}
             <div className="flex items-center justify-between pt-4">
-              <p className="text-sm text-navy-400">
+              <p className="text-sm text-slate-500">
                 Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{' '}
                 {Math.min(page * ITEMS_PER_PAGE, data.count)} of {data.count}{' '}
                 invoices
@@ -309,8 +320,8 @@ export function InvoiceList() {
                         className={cn(
                           'w-8 h-8 rounded-lg text-sm font-medium transition-colors',
                           page === pageNum
-                            ? 'bg-gold-500/20 text-gold-400'
-                            : 'text-navy-400 hover:text-navy-200 hover:bg-navy-800'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                         )}
                       >
                         {pageNum}

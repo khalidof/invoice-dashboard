@@ -3,7 +3,12 @@
   "id": "Wtve6TUEa9c2XPW1",
   "nodes": [
     {
-      "parameters": {"httpMethod": "POST"},
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-processor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
       "id": "webhook",
       "name": "Receive Invoice",
       "type": "n8n-nodes-base.webhook",

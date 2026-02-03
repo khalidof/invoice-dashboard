@@ -15,7 +15,7 @@ export function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) 
   return (
     <div
       className={cn(
-        'animate-spin rounded-full border-navy-700 border-t-gold-500',
+        'animate-spin rounded-full border-slate-200 border-t-orange-500',
         sizeClasses[size],
         className
       )}
@@ -28,7 +28,7 @@ export function LoadingPage() {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
         <LoadingSpinner size="lg" />
-        <p className="text-sm text-navy-400">Loading...</p>
+        <p className="text-sm text-slate-500">Loading...</p>
       </div>
     </div>
   );
@@ -40,7 +40,7 @@ export function LoadingSkeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('skeleton animate-pulse bg-navy-800/50 rounded', className)}
+      className={cn('skeleton animate-pulse bg-slate-200 rounded', className)}
       {...props}
     />
   );

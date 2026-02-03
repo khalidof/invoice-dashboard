@@ -13,23 +13,23 @@ interface RecentInvoicesProps {
 export function RecentInvoices({ invoices, loading }: RecentInvoicesProps) {
   return (
     <div className="glass-card">
-      <div className="flex items-center justify-between p-4 border-b border-navy-800/50">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-navy-800/50">
-            <FileText className="w-4 h-4 text-navy-400" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100">
+            <FileText className="w-4 h-4 text-slate-500" />
           </div>
-          <h3 className="font-semibold text-navy-100">Recent Invoices</h3>
+          <h3 className="font-semibold text-slate-800">Recent Invoices</h3>
         </div>
         <Link
           to="/invoices"
-          className="flex items-center gap-1.5 text-sm text-gold-400 hover:text-gold-300 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-orange-500 hover:text-orange-600 transition-colors"
         >
           View All
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 
-      <div className="divide-y divide-navy-800/50">
+      <div className="divide-y divide-slate-100">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 p-4">
@@ -43,11 +43,11 @@ export function RecentInvoices({ invoices, loading }: RecentInvoicesProps) {
           ))
         ) : invoices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="w-10 h-10 text-navy-600 mb-3" />
-            <p className="text-sm text-navy-400">No invoices yet</p>
+            <FileText className="w-10 h-10 text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">No invoices yet</p>
             <Link
               to="/upload"
-              className="mt-4 text-sm text-gold-400 hover:text-gold-300 transition-colors"
+              className="mt-4 text-sm text-orange-500 hover:text-orange-600 transition-colors"
             >
               Upload your first invoice
             </Link>
@@ -58,34 +58,34 @@ export function RecentInvoices({ invoices, loading }: RecentInvoicesProps) {
               key={invoice.id}
               to={`/invoices/${invoice.id}`}
               className={cn(
-                'flex items-center gap-4 p-4 hover:bg-navy-800/30 transition-all duration-200',
+                'flex items-center gap-4 p-4 hover:bg-slate-50 transition-all duration-200',
                 'animate-fade-in opacity-0',
                 `stagger-${Math.min(index + 1, 5)}`
               )}
               style={{ animationFillMode: 'forwards' }}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-navy-800/50">
-                <span className="text-sm font-mono font-medium text-navy-300">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100">
+                <span className="text-sm font-medium text-slate-600">
                   {invoice.vendor_name?.charAt(0) || '?'}
                 </span>
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-medium text-navy-200 truncate">
+                  <span className="text-sm font-medium text-slate-700 truncate">
                     {invoice.vendor_name || 'Unknown Vendor'}
                   </span>
-                  <span className="text-xs text-navy-500 font-mono">
+                  <span className="text-xs text-slate-400 font-mono">
                     #{invoice.invoice_number || '-'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-navy-500">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
                   <span>{formatRelativeTime(invoice.created_at)}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <span className="font-mono text-sm text-navy-200">
+                <span className="font-mono text-sm text-slate-700">
                   {formatCurrency(invoice.total_amount, invoice.currency)}
                 </span>
                 <InvoiceStatusBadge status={invoice.status} size="sm" />

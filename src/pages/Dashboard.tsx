@@ -2,7 +2,8 @@ import {
   FileText,
   DollarSign,
   Clock,
-  Zap,
+  Cpu,
+  Activity,
 } from 'lucide-react';
 import { PageContainer } from '@/components/layout';
 import {
@@ -43,6 +44,14 @@ export function Dashboard() {
     <PageContainer
       title="Dashboard"
       subtitle="Welcome back! Here's your invoice processing overview."
+      headerExtra={
+        <div className="mcp-status">
+          <div className="mcp-status-dot" />
+          <Cpu className="w-3.5 h-3.5" />
+          <span>MCP Architecture Active</span>
+          <Activity className="w-3 h-3 ml-1 text-green-500" />
+        </div>
+      }
     >
       <div className="space-y-8">
         {/* KPI Cards */}
@@ -81,8 +90,8 @@ export function Dashboard() {
             <StatsCard
               title="Avg. Processing Time"
               value={`${stats?.avgProcessingTime ?? 0}s`}
-              icon={<Zap className="w-5 h-5" strokeWidth={2} />}
-              subtitle="AI extraction speed"
+              icon={<Cpu className="w-5 h-5" strokeWidth={2} />}
+              subtitle="MCP AI extraction"
               loading={statsLoading}
               accentColor="azure"
             />

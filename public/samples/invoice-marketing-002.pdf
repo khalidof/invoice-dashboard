@@ -1,0 +1,55 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1170 >>
+stream
+BT /F1 12 Tf 50 750 Td (INVOICE) Tj ET
+BT /F1 12 Tf 50 734 Td () Tj ET
+BT /F1 12 Tf 50 718 Td (Invoice #: INV-2024-002) Tj ET
+BT /F1 12 Tf 50 702 Td (Date: January 20, 2024) Tj ET
+BT /F1 12 Tf 50 686 Td (Due Date: February 20, 2024) Tj ET
+BT /F1 12 Tf 50 670 Td () Tj ET
+BT /F1 12 Tf 50 654 Td (From:) Tj ET
+BT /F1 12 Tf 50 638 Td (Creative Marketing Agency) Tj ET
+BT /F1 12 Tf 50 622 Td (789 Design Street, Los Angeles, CA) Tj ET
+BT /F1 12 Tf 50 606 Td (invoices@creative.com) Tj ET
+BT /F1 12 Tf 50 590 Td () Tj ET
+BT /F1 12 Tf 50 574 Td (Bill To:) Tj ET
+BT /F1 12 Tf 50 558 Td (Global Retail Ltd.) Tj ET
+BT /F1 12 Tf 50 542 Td (321 Commerce Blvd, Chicago, IL) Tj ET
+BT /F1 12 Tf 50 526 Td (finance@globalretail.com) Tj ET
+BT /F1 12 Tf 50 510 Td () Tj ET
+BT /F1 12 Tf 50 494 Td (Items:) Tj ET
+BT /F1 12 Tf 50 478 Td (1. Brand Strategy Consultation - $1500.00) Tj ET
+BT /F1 12 Tf 50 462 Td (2. Logo Design Package - $800.00) Tj ET
+BT /F1 12 Tf 50 446 Td (3. Social Media Campaign - $1200.00) Tj ET
+BT /F1 12 Tf 50 430 Td () Tj ET
+BT /F1 12 Tf 50 414 Td (Subtotal: $3500.00) Tj ET
+BT /F1 12 Tf 50 398 Td (Tax: $350.00) Tj ET
+BT /F1 12 Tf 50 382 Td (Total: $3850.00) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000266 00000 n
+00000001490 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1550
+%%EOF

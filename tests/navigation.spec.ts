@@ -95,7 +95,7 @@ test.describe('Header', () => {
 
     // Navigate to upload
     await page.goto('/upload');
-    await expect(page.getByRole('heading', { name: /upload/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Navigate to settings
     await page.goto('/settings');

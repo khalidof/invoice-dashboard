@@ -18,16 +18,16 @@ interface SpendByVendorProps {
 }
 
 const COLORS = [
-  '#fbbf24', // gold-400
-  '#60a5fa', // blue-400
-  '#34d399', // success-400
-  '#f472b6', // pink-400
-  '#a78bfa', // purple-400
-  '#fb923c', // orange-400
-  '#2dd4bf', // teal-400
-  '#f87171', // red-400
-  '#818cf8', // indigo-400
-  '#22d3ee', // cyan-400
+  '#f97316', // orange-500
+  '#3b82f6', // blue-500
+  '#22c55e', // green-500
+  '#8b5cf6', // violet-500
+  '#ec4899', // pink-500
+  '#14b8a6', // teal-500
+  '#f59e0b', // amber-500
+  '#6366f1', // indigo-500
+  '#ef4444', // red-500
+  '#06b6d4', // cyan-500
 ];
 
 export function SpendByVendor({ data, loading }: SpendByVendorProps) {
@@ -35,19 +35,19 @@ export function SpendByVendor({ data, loading }: SpendByVendorProps) {
 
   return (
     <div className="glass-card">
-      <div className="flex items-center justify-between p-4 border-b border-navy-800/50">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-navy-800/50">
-            <BarChart3 className="w-4 h-4 text-navy-400" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100">
+            <BarChart3 className="w-4 h-4 text-slate-500" />
           </div>
           <div>
-            <h3 className="font-semibold text-navy-100">Spend by Vendor</h3>
-            <p className="text-xs text-navy-500">Top 10 vendors by total spend</p>
+            <h3 className="font-semibold text-slate-800">Spend by Vendor</h3>
+            <p className="text-xs text-slate-400">Top 10 vendors by total spend</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-navy-500">Total</p>
-          <p className="text-lg font-mono font-semibold text-gold-400">
+          <p className="text-xs text-slate-400">Total</p>
+          <p className="text-lg font-mono font-semibold text-orange-500">
             {formatCompactCurrency(totalSpend)}
           </p>
         </div>
@@ -66,8 +66,8 @@ export function SpendByVendor({ data, loading }: SpendByVendorProps) {
           </div>
         ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <BarChart3 className="w-10 h-10 text-navy-600 mb-3" />
-            <p className="text-sm text-navy-400">No vendor data yet</p>
+            <BarChart3 className="w-10 h-10 text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">No vendor data yet</p>
           </div>
         ) : (
           <div className="h-[300px]">
@@ -86,7 +86,7 @@ export function SpendByVendor({ data, loading }: SpendByVendorProps) {
                   type="category"
                   dataKey="name"
                   width={120}
-                  tick={{ fill: '#829ab1', fontSize: 12 }}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) =>
@@ -99,14 +99,14 @@ export function SpendByVendor({ data, loading }: SpendByVendorProps) {
                       const data = payload[0].payload as VendorSpend;
                       const percentage = ((data.amount / totalSpend) * 100).toFixed(1);
                       return (
-                        <div className="bg-navy-800 border border-navy-700 rounded-lg px-3 py-2 shadow-lg">
-                          <p className="text-sm font-medium text-navy-100 mb-1">
+                        <div className="bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-lg">
+                          <p className="text-sm font-medium text-slate-800 mb-1">
                             {data.name}
                           </p>
-                          <p className="text-sm text-gold-400 font-mono">
+                          <p className="text-sm text-orange-500 font-mono">
                             {formatCurrency(data.amount)}
                           </p>
-                          <p className="text-xs text-navy-400 mt-1">
+                          <p className="text-xs text-slate-400 mt-1">
                             {percentage}% of total
                           </p>
                         </div>
@@ -124,7 +124,7 @@ export function SpendByVendor({ data, loading }: SpendByVendorProps) {
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
-                      fillOpacity={0.8}
+                      fillOpacity={0.85}
                     />
                   ))}
                 </Bar>

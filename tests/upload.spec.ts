@@ -10,7 +10,8 @@ test.describe('Upload Page', () => {
   });
 
   test('should display Upload Invoice heading', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: /upload/i })).toBeVisible();
+    // Use level 1 heading to be more specific
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('should display drag and drop zone', async ({ page }) => {

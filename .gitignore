@@ -30,3 +30,12 @@ dist-ssr
 
 # OS files
 Thumbs.db
+
+# Test artifacts
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Temporary files
+nul
+*.tmp

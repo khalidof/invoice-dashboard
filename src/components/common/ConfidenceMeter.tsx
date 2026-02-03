@@ -13,26 +13,26 @@ function getConfidenceLevel(value: number) {
     return {
       level: 'high',
       label: 'High Confidence',
-      color: 'text-success-400',
-      bgColor: 'bg-success-500',
-      ringColor: 'stroke-success-500',
+      color: 'text-green-600',
+      bgColor: 'bg-green-500',
+      ringColor: 'stroke-green-500',
     };
   }
   if (value >= CONFIDENCE_THRESHOLDS.medium) {
     return {
       level: 'medium',
       label: 'Review Recommended',
-      color: 'text-warning-400',
-      bgColor: 'bg-warning-500',
-      ringColor: 'stroke-warning-500',
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-500',
+      ringColor: 'stroke-yellow-500',
     };
   }
   return {
     level: 'low',
     label: 'Manual Review Required',
-    color: 'text-error-400',
-    bgColor: 'bg-error-500',
-    ringColor: 'stroke-error-500',
+    color: 'text-red-600',
+    bgColor: 'bg-red-500',
+    ringColor: 'stroke-red-500',
   };
 }
 
@@ -49,7 +49,7 @@ export function ConfidenceMeter({
   variant = 'bar',
 }: ConfidenceMeterProps) {
   if (value == null) {
-    return <span className="text-navy-500 text-sm">-</span>;
+    return <span className="text-slate-400 text-sm">-</span>;
   }
 
   const config = getConfidenceLevel(value);
@@ -76,7 +76,7 @@ export function ConfidenceMeter({
               fill="none"
               stroke="currentColor"
               strokeWidth={stroke}
-              className="text-navy-800"
+              className="text-slate-200"
             />
             {/* Progress ring */}
             <circle
@@ -115,10 +115,10 @@ export function ConfidenceMeter({
           {value}%
         </span>
         {showLabel && (
-          <span className="text-xs text-navy-400">{config.label}</span>
+          <span className="text-xs text-slate-500">{config.label}</span>
         )}
       </div>
-      <div className="h-1.5 bg-navy-800 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
@@ -141,13 +141,13 @@ export function ConfidenceBadge({ value }: { value: number | null }) {
       className={cn(
         'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
         config.color,
-        config.level === 'high' && 'bg-success-500/10',
-        config.level === 'medium' && 'bg-warning-500/10',
-        config.level === 'low' && 'bg-error-500/10'
+        config.level === 'high' && 'bg-green-100',
+        config.level === 'medium' && 'bg-yellow-100',
+        config.level === 'low' && 'bg-red-100'
       )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full', config.bgColor)} />
-      {value}%
+      {Math.round(value)}%
     </span>
   );
 }

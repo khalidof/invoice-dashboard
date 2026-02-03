@@ -12,16 +12,16 @@ interface ProcessingQueueProps {
 export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
   return (
     <div className="glass-card h-full">
-      <div className="flex items-center justify-between p-4 border-b border-navy-800/50">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-navy-800/50">
-            <Clock className="w-4 h-4 text-navy-400" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100">
+            <Clock className="w-4 h-4 text-slate-500" />
           </div>
-          <h3 className="font-semibold text-navy-100">Processing Queue</h3>
+          <h3 className="font-semibold text-slate-800">Processing Queue</h3>
         </div>
         {invoices.length > 0 && (
-          <span className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-warning-500/10 text-xs font-medium text-warning-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-warning-400 animate-pulse" />
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-yellow-50 text-xs font-medium text-yellow-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
             {invoices.length} pending
           </span>
         )}
@@ -32,7 +32,7 @@ export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
           Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 p-3 rounded-lg bg-navy-900/30"
+              className="flex items-center gap-3 p-3 rounded-lg bg-slate-50"
             >
               <LoadingSkeleton className="w-8 h-8 rounded-lg" />
               <div className="flex-1">
@@ -44,11 +44,11 @@ export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
           ))
         ) : invoices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-success-500/10 mb-3">
-              <CheckCircle2 className="w-6 h-6 text-success-400" />
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-green-50 mb-3">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
             </div>
-            <p className="text-sm text-navy-300 font-medium">Queue Clear</p>
-            <p className="text-xs text-navy-500 mt-1">
+            <p className="text-sm text-slate-700 font-medium">Queue Clear</p>
+            <p className="text-xs text-slate-400 mt-1">
               All invoices have been processed
             </p>
           </div>
@@ -58,8 +58,8 @@ export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
               key={invoice.id}
               to={`/invoices/${invoice.id}`}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg bg-navy-900/30 border border-navy-800/50',
-                'hover:bg-navy-800/30 hover:border-navy-700/50 transition-all duration-200',
+                'flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100',
+                'hover:bg-slate-100 hover:border-slate-200 transition-all duration-200',
                 'animate-slide-up opacity-0',
                 `stagger-${Math.min(index + 1, 5)}`
               )}
@@ -69,22 +69,22 @@ export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
                 className={cn(
                   'flex items-center justify-center w-8 h-8 rounded-lg',
                   invoice.status === 'pending'
-                    ? 'bg-warning-500/10'
-                    : 'bg-blue-500/10'
+                    ? 'bg-yellow-50'
+                    : 'bg-blue-50'
                 )}
               >
                 {invoice.status === 'pending' ? (
-                  <Loader2 className="w-4 h-4 text-warning-400 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />
                 ) : (
-                  <FileText className="w-4 h-4 text-blue-400" />
+                  <FileText className="w-4 h-4 text-blue-500" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-navy-200 truncate">
+                <p className="text-sm font-medium text-slate-700 truncate">
                   {invoice.file_name || invoice.invoice_number || 'Processing...'}
                 </p>
-                <p className="text-xs text-navy-500">
+                <p className="text-xs text-slate-400">
                   {formatRelativeTime(invoice.created_at)}
                 </p>
               </div>
@@ -93,8 +93,8 @@ export function ProcessingQueue({ invoices, loading }: ProcessingQueueProps) {
                 className={cn(
                   'w-2 h-2 rounded-full',
                   invoice.status === 'pending'
-                    ? 'bg-warning-400 animate-pulse'
-                    : 'bg-blue-400'
+                    ? 'bg-yellow-500 animate-pulse'
+                    : 'bg-blue-500'
                 )}
               />
             </Link>

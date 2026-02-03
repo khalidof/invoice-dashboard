@@ -1,20 +1,93 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
-  Upload,
   FileText,
   CheckCircle2,
   XCircle,
   Loader2,
   X,
   AlertCircle,
-  Sparkles,
-  CloudUpload,
+  Upload,
+  WifiOff,
+  Server,
+  FileWarning,
+  RefreshCw,
 } from 'lucide-react';
 import { cn, formatFileSize } from '@/utils';
 import { ACCEPTED_FILE_TYPES, MAX_FILE_SIZE } from '@/utils/constants';
 import { Button } from '@/components/common';
+import { processInvoice } from '@/services/api';
 import type { ProcessInvoiceResponse } from '@/types';
+
+// Error types for better user feedback
+interface ErrorInfo {
+  type: 'connection' | 'server' | 'timeout' | 'parse' | 'validation' | 'unknown';
+  title: string;
+  message: string;
+  suggestion: string;
+}
+
+function parseError(error: unknown, _responseText?: string): ErrorInfo {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
+  // Connection refused / network error
+  if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('ECONNREFUSED')) {
+    return {
+      type: 'connection',
+      title: 'Connection Failed',
+      message: 'Cannot connect to the processing server',
+      suggestion: 'Make sure n8n is running and the webhook workflow is active',
+    };
+  }
+
+  // JSON parse error (empty response)
+  if (errorMessage.includes('Unexpected end of JSON') || errorMessage.includes('JSON')) {
+    return {
+      type: 'parse',
+      title: 'Invalid Response',
+      message: 'The server returned an empty or invalid response',
+      suggestion: 'Check if the n8n workflow is in "listening" mode (click Execute workflow in n8n)',
+    };
+  }
+
+  // Timeout
+  if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+    return {
+      type: 'timeout',
+      title: 'Request Timeout',
+      message: 'The server took too long to respond',
+      suggestion: 'The invoice may be complex. Try again or check n8n logs',
+    };
+  }
+
+  // Server error (5xx)
+  if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+    return {
+      type: 'server',
+      title: 'Server Error',
+      message: 'The processing server encountered an error',
+      suggestion: 'Check the n8n workflow execution logs for details',
+    };
+  }
+
+  // Validation error
+  if (errorMessage.includes('validation') || errorMessage.includes('invalid')) {
+    return {
+      type: 'validation',
+      title: 'Validation Error',
+      message: errorMessage,
+      suggestion: 'Check if the file is a valid invoice document',
+    };
+  }
+
+  // Generic error with original message
+  return {
+    type: 'unknown',
+    title: 'Upload Failed',
+    message: errorMessage,
+    suggestion: 'Try again or check the browser console for more details',
+  };
+}
 
 interface InvoiceUploaderProps {
   onUploadComplete?: (result: ProcessInvoiceResponse) => void;
@@ -30,6 +103,7 @@ interface FileUploadState {
   progress: number;
   result?: ProcessInvoiceResponse;
   error?: string;
+  errorInfo?: ErrorInfo;
 }
 
 export function InvoiceUploader({
@@ -50,44 +124,13 @@ export function InvoiceUploader({
       try {
         updateUpload({ status: 'uploading', progress: 10 });
 
-        // Convert to base64
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(',')[1]);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
+        // Use the processInvoice function which handles storage and optional n8n processing
+        const result = await processInvoice(file, (progress) => {
+          updateUpload({
+            status: progress < 50 ? 'uploading' : 'processing',
+            progress,
+          });
         });
-
-        updateUpload({ progress: 40 });
-
-        // Send to n8n webhook
-        const webhookUrl =
-          import.meta.env.VITE_N8N_WEBHOOK_URL ||
-          'http://localhost:5678/webhook/process-invoice-pro';
-
-        updateUpload({ status: 'processing', progress: 60 });
-
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_base64: base64,
-            mime_type: file.type,
-            filename: file.name,
-            source: 'dashboard',
-          }),
-        });
-
-        updateUpload({ progress: 90 });
-
-        if (!response.ok) {
-          throw new Error(`Upload failed: ${response.statusText}`);
-        }
-
-        const result: ProcessInvoiceResponse = await response.json();
 
         if (result.success) {
           updateUpload({ status: 'success', progress: 100, result });
@@ -97,7 +140,8 @@ export function InvoiceUploader({
         }
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Upload failed');
-        updateUpload({ status: 'error', error: error.message });
+        const errorInfo = parseError(err);
+        updateUpload({ status: 'error', error: error.message, errorInfo });
         onError?.(error);
       }
     },
@@ -139,100 +183,66 @@ export function InvoiceUploader({
     setUploads((prev) => prev.filter((u) => u.status !== 'success'));
   };
 
+  const retryUpload = (index: number) => {
+    const upload = uploads[index];
+    if (upload && upload.status === 'error') {
+      // Reset the upload state and retry
+      setUploads((prev) =>
+        prev.map((u, i) =>
+          i === index ? { ...u, status: 'idle' as const, progress: 0, error: undefined, errorInfo: undefined } : u
+        )
+      );
+      // Process the file again
+      setTimeout(() => processFile(upload.file, index), 100);
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Drop Zone */}
       <div
         {...getRootProps()}
         className={cn(
-          'relative flex flex-col items-center justify-center p-16 rounded-3xl border-2 border-dashed transition-all duration-500 cursor-pointer group overflow-hidden',
+          'relative flex flex-col items-center justify-center p-12 rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer',
           isDragActive && !isDragReject
-            ? 'border-ember-500 bg-ember-500/5 scale-[1.01]'
+            ? 'border-orange-500 bg-orange-50'
             : isDragReject
-            ? 'border-rose-500 bg-rose-500/5'
-            : 'border-obsidian-700/50 bg-obsidian-900/30 hover:border-obsidian-600/50 hover:bg-obsidian-800/30'
+            ? 'border-red-500 bg-red-50'
+            : 'border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50'
         )}
       >
         <input {...getInputProps()} />
 
-        {/* Animated background gradient */}
+        {/* Upload icon */}
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-br from-ember-500/5 via-transparent to-violet-500/5 opacity-0 transition-opacity duration-500",
-          isDragActive && "opacity-100"
-        )} />
-
-        {/* Decorative corner elements */}
-        {['top-6 left-6 border-l-2 border-t-2 rounded-tl-xl',
-          'top-6 right-6 border-r-2 border-t-2 rounded-tr-xl',
-          'bottom-6 left-6 border-l-2 border-b-2 rounded-bl-xl',
-          'bottom-6 right-6 border-r-2 border-b-2 rounded-br-xl'
-        ].map((classes, i) => (
-          <div
-            key={i}
-            className={cn(
-              'absolute w-10 h-10 transition-all duration-300',
-              classes,
-              isDragActive
-                ? 'border-ember-500/60'
-                : 'border-obsidian-700/40 group-hover:border-obsidian-600/60'
-            )}
-          />
-        ))}
-
-        {/* Upload icon with glow */}
-        <div className="relative mb-8">
-          <div className={cn(
-            "absolute inset-0 rounded-3xl blur-2xl transition-all duration-500",
-            isDragActive ? "bg-ember-500/30" : "bg-ember-500/0 group-hover:bg-ember-500/10"
-          )} />
-          <div
-            className={cn(
-              'relative flex items-center justify-center w-20 h-20 rounded-3xl transition-all duration-500',
-              isDragActive
-                ? 'bg-gradient-to-br from-ember-500/30 to-ember-600/20 scale-110'
-                : 'bg-obsidian-800/60 group-hover:bg-obsidian-800 group-hover:scale-105'
-            )}
-          >
-            <CloudUpload
-              className={cn(
-                'w-9 h-9 transition-all duration-300',
-                isDragActive
-                  ? 'text-ember-400'
-                  : 'text-obsidian-400 group-hover:text-obsidian-300'
-              )}
-              strokeWidth={1.5}
-            />
-          </div>
+          'flex items-center justify-center w-14 h-14 rounded-xl mb-4 transition-colors',
+          isDragActive
+            ? 'bg-orange-100 text-orange-500'
+            : 'bg-slate-100 text-slate-400'
+        )}>
+          <Upload className="w-7 h-7" strokeWidth={1.5} />
         </div>
 
-        <h3 className="text-xl font-display font-semibold text-obsidian-100 mb-3">
-          {isDragActive ? 'Release to upload' : 'Drop invoices here'}
+        <h3 className="text-lg font-semibold text-slate-800 mb-1">
+          {isDragActive ? 'Drop files here' : 'Upload invoices'}
         </h3>
-        <p className="text-sm text-obsidian-400 mb-6">
-          Upload PDF or image files for AI-powered data extraction
+        <p className="text-sm text-slate-500 mb-4">
+          Drag and drop files or click to browse
         </p>
 
-        <Button variant="secondary" size="md" className="mb-8">
+        <Button variant="primary" size="md">
           Browse Files
         </Button>
 
-        <div className="flex items-center gap-6 text-xs text-obsidian-500">
+        <div className="flex items-center gap-4 mt-4 text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5" />
             PDF, PNG, JPG
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-obsidian-700" />
+          <span className="w-1 h-1 rounded-full bg-slate-300" />
           <span>Up to 10MB per file</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-obsidian-700" />
-          <span>Max {maxFiles} files at once</span>
-        </div>
-
-        {/* AI badge */}
-        <div className="absolute bottom-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full bg-obsidian-800/60 border border-obsidian-700/40">
-          <Sparkles className="w-3.5 h-3.5 text-ember-400" />
-          <span className="text-[10px] font-semibold text-obsidian-400 uppercase tracking-wider">
-            AI Powered
-          </span>
+          <span className="w-1 h-1 rounded-full bg-slate-300" />
+          <span>Max {maxFiles} files</span>
         </div>
       </div>
 
@@ -240,9 +250,9 @@ export function InvoiceUploader({
       {uploads.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-base font-semibold text-obsidian-200">
+            <h4 className="text-sm font-semibold text-slate-700">
               Uploads
-              <span className="ml-2 text-sm font-normal text-obsidian-500">
+              <span className="ml-2 text-slate-400 font-normal">
                 ({uploads.length} file{uploads.length > 1 ? 's' : ''})
               </span>
             </h4>
@@ -253,12 +263,13 @@ export function InvoiceUploader({
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {uploads.map((upload, index) => (
               <UploadItem
                 key={`${upload.file.name}-${index}`}
                 upload={upload}
                 onRemove={() => removeUpload(index)}
+                onRetry={() => retryUpload(index)}
               />
             ))}
           </div>
@@ -271,67 +282,83 @@ export function InvoiceUploader({
 function UploadItem({
   upload,
   onRemove,
+  onRetry,
 }: {
   upload: FileUploadState;
   onRemove: () => void;
+  onRetry?: () => void;
 }) {
-  const { file, status, progress, result, error } = upload;
+  const { file, status, progress, result, error, errorInfo } = upload;
+
+  const getErrorIcon = () => {
+    if (!errorInfo) return <XCircle className="w-5 h-5" />;
+    switch (errorInfo.type) {
+      case 'connection':
+        return <WifiOff className="w-5 h-5" />;
+      case 'server':
+        return <Server className="w-5 h-5" />;
+      case 'parse':
+        return <FileWarning className="w-5 h-5" />;
+      default:
+        return <XCircle className="w-5 h-5" />;
+    }
+  };
 
   return (
     <div
       className={cn(
-        'flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300',
+        'flex items-center gap-4 p-4 rounded-lg border transition-all',
         status === 'success'
-          ? 'bg-gradient-to-r from-mint-500/10 to-mint-500/5 border-mint-500/20'
+          ? 'bg-green-50 border-green-200'
           : status === 'error'
-          ? 'bg-gradient-to-r from-rose-500/10 to-rose-500/5 border-rose-500/20'
-          : 'bg-obsidian-800/40 border-obsidian-700/30'
+          ? 'bg-red-50 border-red-200'
+          : 'bg-white border-slate-200'
       )}
     >
       {/* Icon */}
       <div
         className={cn(
-          'flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300',
+          'flex items-center justify-center w-10 h-10 rounded-lg',
           status === 'success'
-            ? 'bg-mint-500/20'
+            ? 'bg-green-100 text-green-600'
             : status === 'error'
-            ? 'bg-rose-500/20'
+            ? 'bg-red-100 text-red-600'
             : status === 'uploading' || status === 'processing'
-            ? 'bg-ember-500/20'
-            : 'bg-obsidian-700/50'
+            ? 'bg-orange-100 text-orange-600'
+            : 'bg-slate-100 text-slate-500'
         )}
       >
         {status === 'uploading' || status === 'processing' ? (
-          <Loader2 className="w-5 h-5 text-ember-400 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin" />
         ) : status === 'success' ? (
-          <CheckCircle2 className="w-5 h-5 text-mint-400" />
+          <CheckCircle2 className="w-5 h-5" />
         ) : status === 'error' ? (
-          <XCircle className="w-5 h-5 text-rose-400" />
+          getErrorIcon()
         ) : (
-          <FileText className="w-5 h-5 text-obsidian-400" />
+          <FileText className="w-5 h-5" />
         )}
       </div>
 
       {/* File info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-obsidian-100 truncate">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700 truncate">
             {file.name}
           </span>
-          <span className="text-xs text-obsidian-500 font-mono">
+          <span className="text-xs text-slate-400 font-mono">
             {formatFileSize(file.size)}
           </span>
         </div>
 
         {status === 'uploading' && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-obsidian-400 mb-2">
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
               <span>Uploading...</span>
-              <span className="font-mono">{progress}%</span>
+              <span>{progress}%</span>
             </div>
-            <div className="h-1.5 bg-obsidian-700/50 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-ember-500 to-ember-400 transition-all duration-300 rounded-full"
+                className="h-full bg-orange-500 transition-all duration-300 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -339,39 +366,61 @@ function UploadItem({
         )}
 
         {status === 'processing' && (
-          <div className="flex items-center gap-2 mt-2 text-xs text-ember-400">
-            <Sparkles className="w-3 h-3" />
-            <span>AI extracting invoice data...</span>
-          </div>
+          <p className="mt-1 text-xs text-orange-600">
+            Processing invoice...
+          </p>
         )}
 
         {status === 'success' && result?.data && (
-          <div className="flex items-center gap-3 mt-2 text-xs text-mint-400">
-            <span>Invoice #{result.data.invoice_number}</span>
-            <span className="w-1 h-1 rounded-full bg-mint-500" />
-            <span>{result.data.line_items_count} line items</span>
-            <span className="w-1 h-1 rounded-full bg-mint-500" />
-            <span className="font-semibold">{result.data.confidence}% confidence</span>
+          <p className="mt-1 text-xs text-green-600">
+            Invoice #{result.data.invoice_number} • {result.data.line_items_count} items • {result.data.confidence}% confidence
+          </p>
+        )}
+
+        {status === 'error' && errorInfo && (
+          <div className="mt-2 space-y-1">
+            <p className="text-xs font-medium text-red-700">
+              {errorInfo.title}
+            </p>
+            <p className="text-xs text-red-600">
+              {errorInfo.message}
+            </p>
+            <p className="text-xs text-red-500 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+              <span>{errorInfo.suggestion}</span>
+            </p>
           </div>
         )}
 
-        {status === 'error' && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-rose-400">
+        {status === 'error' && !errorInfo && (
+          <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             {error || 'Upload failed'}
-          </div>
+          </p>
         )}
       </div>
 
-      {/* Remove button */}
-      {(status === 'success' || status === 'error' || status === 'idle') && (
-        <button
-          onClick={onRemove}
-          className="flex items-center justify-center w-9 h-9 rounded-xl text-obsidian-500 hover:text-obsidian-200 hover:bg-obsidian-700/50 transition-all duration-200"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
+      {/* Action buttons */}
+      <div className="flex items-center gap-1">
+        {status === 'error' && onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-orange-500 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+            title="Retry upload"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        )}
+        {(status === 'success' || status === 'error' || status === 'idle') && (
+          <button
+            onClick={onRemove}
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            title="Remove"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

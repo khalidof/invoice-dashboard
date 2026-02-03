@@ -12,49 +12,46 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses = {
   primary: [
-    'relative overflow-hidden',
-    'bg-gradient-to-r from-ember-500 to-ember-600',
-    'text-white font-semibold',
-    'hover:from-ember-400 hover:to-ember-500',
-    'shadow-lg shadow-ember-500/25',
-    'hover:shadow-xl hover:shadow-ember-500/30',
-    'focus-visible:ring-ember-500',
-    'before:absolute before:inset-0 before:bg-gradient-to-t before:from-black/10 before:to-transparent',
+    'bg-orange-500',
+    'text-white font-medium',
+    'hover:bg-orange-600',
+    'shadow-sm',
+    'focus-visible:ring-orange-500',
   ].join(' '),
   secondary: [
-    'bg-obsidian-800/60',
-    'text-obsidian-100 font-medium',
-    'hover:bg-obsidian-700/60 hover:text-white',
-    'border border-obsidian-700/50',
-    'hover:border-obsidian-600/50',
-    'focus-visible:ring-obsidian-500',
+    'bg-white',
+    'text-slate-700 font-medium',
+    'hover:bg-slate-50',
+    'border border-slate-200',
+    'hover:border-slate-300',
+    'focus-visible:ring-slate-400',
   ].join(' '),
   ghost: [
     'bg-transparent',
-    'text-obsidian-400 font-medium',
-    'hover:bg-obsidian-800/50 hover:text-obsidian-100',
-    'focus-visible:ring-obsidian-500',
+    'text-slate-600 font-medium',
+    'hover:bg-slate-100 hover:text-slate-900',
+    'focus-visible:ring-slate-400',
   ].join(' '),
   danger: [
-    'bg-gradient-to-r from-rose-600 to-rose-700',
-    'text-white font-semibold',
-    'hover:from-rose-500 hover:to-rose-600',
-    'shadow-lg shadow-rose-500/25',
-    'focus-visible:ring-rose-500',
+    'bg-red-500',
+    'text-white font-medium',
+    'hover:bg-red-600',
+    'shadow-sm',
+    'focus-visible:ring-red-500',
   ].join(' '),
   success: [
-    'bg-gradient-to-r from-mint-600 to-mint-700',
-    'text-white font-semibold',
-    'hover:from-mint-500 hover:to-mint-600',
-    'shadow-lg shadow-mint-500/25',
-    'focus-visible:ring-mint-500',
+    'bg-green-500',
+    'text-white font-medium',
+    'hover:bg-green-600',
+    'shadow-sm',
+    'focus-visible:ring-green-500',
   ].join(' '),
 };
 
 const sizeClasses = {
-  sm: 'px-3.5 py-2 text-xs gap-1.5 rounded-lg',
-  md: 'px-5 py-2.5 text-sm gap-2 rounded-xl',
-  lg: 'px-7 py-3.5 text-base gap-2.5 rounded-xl',
+  sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-md',
+  md: 'px-4 py-2 text-sm gap-2 rounded-lg',
+  lg: 'px-6 py-3 text-base gap-2.5 rounded-lg',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -77,10 +74,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cn(
           'inline-flex items-center justify-center',
-          'transition-all duration-300 ease-out',
-          'transform active:scale-[0.98]',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-950',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none disabled:transform-none',
+          'transition-all duration-200',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantClasses[variant],
           sizeClasses[size],
           className
@@ -92,12 +88,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <LoadingSpinner size="sm" />
         ) : (
           icon && iconPosition === 'left' && (
-            <span className="transition-transform group-hover:-translate-x-0.5">{icon}</span>
+            <span>{icon}</span>
           )
         )}
-        <span className="relative">{children}</span>
+        <span>{children}</span>
         {!loading && icon && iconPosition === 'right' && (
-          <span className="transition-transform group-hover:translate-x-0.5">{icon}</span>
+          <span>{icon}</span>
         )}
       </button>
     );

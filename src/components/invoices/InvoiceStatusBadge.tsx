@@ -23,11 +23,11 @@ export function InvoiceStatusBadge({ status, size = 'md' }: InvoiceStatusBadgePr
       <span
         className={cn(
           'w-1.5 h-1.5 rounded-full mr-1.5',
-          status === 'pending' && 'bg-warning-400',
-          status === 'processed' && 'bg-blue-400',
-          status === 'approved' && 'bg-success-400',
-          status === 'paid' && 'bg-navy-400',
-          status === 'rejected' && 'bg-error-400'
+          status === 'pending' && 'bg-orange-500',
+          status === 'processed' && 'bg-blue-500',
+          status === 'approved' && 'bg-green-500',
+          status === 'paid' && 'bg-slate-400',
+          status === 'rejected' && 'bg-red-500'
         )}
       />
       {config.label}

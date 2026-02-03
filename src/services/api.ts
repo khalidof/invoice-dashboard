@@ -1,7 +1,9 @@
 import type { ProcessInvoiceResponse } from '@/types';
 import { invoiceService, supabase } from './supabase';
 
-const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/process-invoice-mcp';
+// MCP Architecture v2 - Invoice Processor Webhook
+// Fixed workflow - properly sends PDF to Claude's Vision API
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/invoice-mcp-v2';
 
 export async function processInvoice(
   file: File,
@@ -64,18 +66,23 @@ export async function processInvoice(
 
   // Store invoice in Supabase (regardless of n8n result)
   try {
+    // Extract vendor info - handle both nested and flat structures
+    const vendorData = extractedData?.vendor as Record<string, unknown> | undefined;
+    const vendorName = vendorData?.name as string | undefined
+      || extractedData?.vendor_name as string | undefined;
+
     const invoice = await invoiceService.create({
-      invoice_number: extractedData?.invoice_number as string || null,
-      vendor_name: extractedData?.vendor?.name as string || extractedData?.vendor_name as string || null,
-      invoice_date: extractedData?.invoice_date as string || null,
-      due_date: extractedData?.due_date as string || null,
-      total_amount: extractedData?.total as number || extractedData?.total_amount as number || null,
-      currency: extractedData?.currency as string || 'USD',
+      invoice_number: (extractedData?.invoice_number as string) || undefined,
+      vendor_name: vendorName,
+      invoice_date: (extractedData?.invoice_date as string) || undefined,
+      due_date: (extractedData?.due_date as string) || undefined,
+      total_amount: (extractedData?.total as number) || (extractedData?.total_amount as number) || undefined,
+      currency: (extractedData?.currency as string) || 'USD',
       status: extractedData ? 'processed' : 'pending',
-      file_url: fileUrl,
+      file_url: fileUrl || undefined,
       file_name: file.name,
-      extracted_data: extractedData,
-      confidence: extractedData?.confidence as number || null,
+      extracted_data: extractedData || undefined,
+      confidence: (extractedData?.confidence as number) || undefined,
       flags: [],
     });
 
