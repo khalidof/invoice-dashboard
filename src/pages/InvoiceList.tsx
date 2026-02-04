@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -32,6 +32,11 @@ export function InvoiceList() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState(search);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync searchInput with URL search param (e.g., when navigating from Header)
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   // Queries
   const { data, isLoading, error } = useInvoices({
