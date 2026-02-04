@@ -16,22 +16,12 @@ export async function processInvoice(
 
   onProgress?.(30);
 
-  // Upload file to Supabase Storage
-  let fileUrl: string | null = null;
+  // Upload file to Supabase Storage (for backup/reference)
   try {
     const fileName = `${Date.now()}-${file.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('invoices')
-      .upload(fileName, file);
-
-    if (!uploadError && uploadData) {
-      const { data: urlData } = supabase.storage
-        .from('invoices')
-        .getPublicUrl(uploadData.path);
-      fileUrl = urlData.publicUrl;
-    }
+    await supabase.storage.from('invoices').upload(fileName, file);
   } catch (e) {
-    console.warn('File upload to storage failed, continuing without file URL:', e);
+    console.warn('File upload to storage failed, continuing:', e);
   }
 
   onProgress?.(40);
@@ -67,17 +57,22 @@ export async function processInvoice(
 
   // n8n handles saving to Supabase, just return the response
   if (n8nResponse) {
+    const lineItems = extractedData?.line_items as unknown[] || [];
     return {
       success: true,
       message: 'Invoice processed and stored successfully',
-      invoice_id: (n8nResponse.id as string) || undefined,
-      extracted_data: extractedData,
       data: {
-        invoice_number: extractedData?.invoice_number as string,
-        line_items_count: (extractedData?.line_items as unknown[])?.length || 0,
+        invoice_id: (n8nResponse.id as string) || '',
+        invoice_number: (extractedData?.invoice_number as string) || null,
+        vendor_name: (extractedData?.vendor_name as string) || null,
+        total_amount: (extractedData?.total_amount as number) || null,
+        currency: (extractedData?.currency as string) || 'USD',
+        line_items_count: lineItems.length,
         confidence: Math.round((extractedData?.confidence as number || 0.95) * 100),
+        anomalies: [],
+        processed_at: new Date().toISOString(),
       },
-    } as ProcessInvoiceResponse;
+    };
   }
 
   // If n8n failed, throw error (don't create duplicate record)
