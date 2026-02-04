@@ -45,6 +45,7 @@ export async function processInvoice(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       body: JSON.stringify({
         file_base64: base64,
