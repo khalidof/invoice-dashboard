@@ -1,5 +1,5 @@
 import type { ProcessInvoiceResponse } from '@/types';
-import { invoiceService, supabase } from './supabase';
+import { supabase } from './supabase';
 
 // MCP Architecture v2 - Invoice Processor Webhook
 // Fixed workflow - properly sends PDF to Claude's Vision API
@@ -63,62 +63,25 @@ export async function processInvoice(
     console.warn('n8n processing failed, storing invoice without extraction:', e);
   }
 
-  onProgress?.(70);
+  onProgress?.(100);
 
-  // Store invoice in Supabase (regardless of n8n result)
-  try {
-    // Extract vendor info - handle both nested and flat structures
-    const vendorData = extractedData?.vendor as Record<string, unknown> | undefined;
-    const vendorName = vendorData?.name as string | undefined
-      || extractedData?.vendor_name as string | undefined;
-
-    const invoice = await invoiceService.create({
-      invoice_number: (extractedData?.invoice_number as string) || undefined,
-      vendor_name: vendorName,
-      invoice_date: (extractedData?.invoice_date as string) || undefined,
-      due_date: (extractedData?.due_date as string) || undefined,
-      total_amount: (extractedData?.total as number) || (extractedData?.total_amount as number) || undefined,
-      currency: (extractedData?.currency as string) || 'USD',
-      status: extractedData ? 'processed' : 'pending',
-      file_url: fileUrl || undefined,
-      file_name: file.name,
-      extracted_data: extractedData || undefined,
-      confidence: (extractedData?.confidence as number) || undefined,
-      flags: [],
-    });
-
-    // Store line items if available
-    const lineItems = extractedData?.line_items as Array<{
-      description?: string;
-      quantity?: number;
-      unit_price?: number;
-      amount?: number;
-    }> || [];
-
-    if (lineItems.length > 0) {
-      await invoiceService.createLineItems(
-        invoice.id,
-        lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total: item.amount,
-        }))
-      );
-    }
-
-    onProgress?.(100);
-
+  // n8n handles saving to Supabase, just return the response
+  if (n8nResponse) {
     return {
       success: true,
       message: 'Invoice processed and stored successfully',
-      invoice_id: invoice.id,
+      invoice_id: (n8nResponse.id as string) || undefined,
       extracted_data: extractedData,
+      data: {
+        invoice_number: extractedData?.invoice_number as string,
+        line_items_count: (extractedData?.line_items as unknown[])?.length || 0,
+        confidence: Math.round((extractedData?.confidence as number || 0.95) * 100),
+      },
     } as ProcessInvoiceResponse;
-  } catch (e) {
-    console.error('Failed to store invoice in Supabase:', e);
-    throw new Error(`Failed to store invoice: ${e instanceof Error ? e.message : 'Unknown error'}`);
   }
+
+  // If n8n failed, throw error (don't create duplicate record)
+  throw new Error('Invoice processing failed - n8n did not respond');
 }
 
 function fileToBase64(file: File): Promise<string> {
